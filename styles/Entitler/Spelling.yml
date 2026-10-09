@@ -1,0 +1,6 @@
+extends: spelling
+message: "'%s' is not in the Australian English dictionary or the Entitler vocabulary."
+level: error
+dicpath: node_modules/dictionary-en-au
+dictionaries:
+  - index
