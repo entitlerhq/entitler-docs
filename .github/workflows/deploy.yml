@@ -1,0 +1,29 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Rebuild docs.entitler.dev
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Ask Workers Builds to rebuild the docs site with this commit
+        env:
+          DOCS_DEPLOY_HOOK: ${{ secrets.DOCS_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DOCS_DEPLOY_HOOK" ]; then
+            echo "::error::The repository secret DOCS_DEPLOY_HOOK is missing. Create a deploy hook for the entitler-docs Worker in Cloudflare (Settings, Builds, Deploy Hooks) and save its URL as the Actions secret DOCS_DEPLOY_HOOK."
+            exit 1
+          fi
+          curl --fail --silent --show-error --output /dev/null --request POST "$DOCS_DEPLOY_HOOK"
+          echo "Workers Builds is rebuilding docs.entitler.dev."
