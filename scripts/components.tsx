@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import { Children, isValidElement, type ReactNode } from 'react'
 
 export const COMPONENT_PROPS = {
   Callout: ['type', 'title'],
-  Tabs: ['items'],
+  Tabs: [],
   Tab: ['value'],
   Cards: [],
   Card: ['title', 'href'],
@@ -39,16 +39,15 @@ function Callout({
   )
 }
 
-function Tabs({ items, children }: { items?: unknown; children?: ReactNode }) {
-  if (!Array.isArray(items) || items.length < 2 || items.some((item) => typeof item !== 'string')) {
-    refuse('Tabs', 'needs items, a list of two or more tab names.')
-  }
+function Tabs({ children }: { children?: ReactNode }) {
+  const tabs = Children.toArray(children).filter(isValidElement)
+  if (tabs.length < 2) refuse('Tabs', 'needs two or more <Tab>s.')
   return <div>{children}</div>
 }
 
 function Tab({ value, children }: { value?: unknown; children?: ReactNode }) {
   if (typeof value !== 'string' || value.length === 0) {
-    refuse('Tab', 'needs value, the name of its tab in the Tabs items.')
+    refuse('Tab', 'needs value, the name shown on its tab.')
   }
   return <section>{children}</section>
 }

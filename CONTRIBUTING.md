@@ -54,13 +54,14 @@ documents, so it is a link entry here, never a page.
 
 ## Components
 
-Pages may use these components and no others. Each takes only the props listed.
+Pages may use these components and no others. Each takes only the props listed, as quoted strings,
+never `{expressions}`: the site refuses to build a page that breaks these rules.
 
 | Component | Props | Use |
 | --------- | ----- | --- |
 | `<Callout>` | `type`: `note` (default), `tip` or `warning`; `title`: optional text, `Note`, `Tip` or `Warning` by default | A note or warning set apart from the text. |
-| `<Tabs>` | `items`: a list of two or more tab names, such as `{["curl", "JavaScript"]}` | Alternatives the reader picks between, such as one example in several languages. Holds `<Tab>`s. |
-| `<Tab>` | `value`: the tab's name, one of its `Tabs` items | One tab's content. |
+| `<Tabs>` | none; its tabs are named by their `<Tab>`s | Alternatives the reader picks between, such as one example in several languages. Holds two or more `<Tab>`s. |
+| `<Tab>` | `value`: the name shown on its tab | One tab's content. |
 | `<Cards>` | none | A grid of `<Card>`s. |
 | `<Card>` | `title`: text; `href`: an internal or external link | A link to another page, with a sentence about it as its content. |
 
@@ -69,7 +70,7 @@ Pages may use these components and no others. Each takes only the props listed.
   Keep server keys out of browsers and mobile apps.
 </Callout>
 
-<Tabs items={["curl", "JavaScript"]}>
+<Tabs>
   <Tab value="curl">
 
 ```bash
