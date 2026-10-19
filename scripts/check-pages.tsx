@@ -153,6 +153,9 @@ function checkMeta(file: string) {
 
 const pages = contentFiles('.mdx')
 const metas = contentFiles('meta.json')
+for (const file of contentFiles('.md')) {
+  report(file, 'is a .md file; pages are .mdx files, and the site builds no other kind.')
+}
 const listed = new Set(metas.flatMap(checkMeta))
 for (const page of pages) {
   const dir = dirname(page)
