@@ -8,8 +8,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import remarkGfm from 'remark-gfm'
 import { visit } from 'unist-util-visit'
 
-import { COMPONENTS, standIns } from './components'
-import { contentFiles, display, readPage } from './pages'
+import { COMPONENT_PROPS, COMPONENTS, type Component, standIns } from './components'
+import { contentFiles, display, NAV_LINK, NAV_SEPARATOR, readPage } from './pages'
 
 const problems: string[] = []
 const allowed = new Set<string>(COMPONENTS)
@@ -24,8 +24,19 @@ function onlyKnownComponents(file: string) {
     visit(tree, (node) => {
       if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return
       const name = node.name ?? '<>'
+      const line = node.position?.start.line
       if (!allowed.has(name)) {
-        report(file, `line ${node.position?.start.line}: <${name}> is not one of ${COMPONENTS.join(', ')}.`)
+        report(file, `line ${line}: <${name}> is not one of ${COMPONENTS.join(', ')}.`)
+        return
+      }
+      const props: readonly string[] = COMPONENT_PROPS[name as Component]
+      for (const attribute of node.attributes) {
+        if (attribute.type !== 'mdxJsxAttribute') {
+          report(file, `line ${line}: <${name}> takes no spread props.`)
+        } else if (!props.includes(attribute.name)) {
+          const accepted = props.length > 0 ? props.join(', ') : 'no props'
+          report(file, `line ${line}: <${name}> has "${attribute.name}"; it takes ${accepted}.`)
+        }
       }
     })
     visit(tree, 'code', (node) => {
@@ -100,8 +111,6 @@ async function checkPage(file: string) {
   }
 }
 
-const LINK = /^\[[^\]]+\]\([^)]+\)$/
-const SEPARATOR = /^---.+---$/
 
 function checkMeta(file: string) {
   let meta: unknown
@@ -131,7 +140,7 @@ function checkMeta(file: string) {
       report(file, 'pages must all be text.')
       continue
     }
-    if (LINK.test(entry) || SEPARATOR.test(entry)) continue
+    if (NAV_LINK.test(entry) || NAV_SEPARATOR.test(entry)) continue
     const path = join(dir, entry)
     if (existsSync(`${path}.mdx`)) listed.push(`${path}.mdx`)
     else if (existsSync(path) && statSync(path).isDirectory()) listed.push(path)
@@ -145,8 +154,9 @@ const metas = contentFiles('meta.json')
 const listed = new Set(metas.flatMap(checkMeta))
 for (const page of pages) {
   const dir = dirname(page)
-  const hasMeta = existsSync(join(dir, 'meta.json'))
-  if (hasMeta && !listed.has(page)) report(page, `is missing from ${display(join(dir, 'meta.json'))}.`)
+  const meta = join(dir, 'meta.json')
+  if (!existsSync(meta)) report(page, `has no ${display(meta)} to list it in the navigation.`)
+  else if (!listed.has(page)) report(page, `is missing from ${display(meta)}.`)
 }
 for (const page of pages) await checkPage(page)
 

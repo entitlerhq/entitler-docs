@@ -4,6 +4,8 @@ import { parse } from 'yaml'
 
 export const CONTENT_DIR = join(import.meta.dir, '..', 'content', 'docs')
 export const API_REFERENCE_URL = '/api-reference'
+export const NAV_LINK = /^\[[^\]]+\]\(([^)]+)\)$/
+export const NAV_SEPARATOR = /^---.+---$/
 
 export type Page = {
   file: string
