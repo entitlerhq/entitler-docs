@@ -44,7 +44,12 @@ for (const file of contentFiles('.mdx')) {
 
 function problemWith(link: Link, fromUrl: string) {
   const { href } = link
-  if (/^(https:|mailto:)/.test(href)) return undefined
+  if (href.startsWith('mailto:')) return undefined
+  if (href.startsWith('https:')) {
+    return /^https:\/\/[^/\s]/.test(href) && URL.canParse(href)
+      ? undefined
+      : `"${href}" is not a full https:// address.`
+  }
   if (href.startsWith('//') || (!href.startsWith('/') && !href.startsWith('#'))) {
     return `"${href}" must be root-relative (/…), an anchor (#…), https: or mailto:.`
   }

@@ -40,8 +40,9 @@ function Callout({
 }
 
 function Tabs({ children }: { children?: ReactNode }) {
-  const tabs = Children.toArray(children).filter(isValidElement)
-  if (tabs.length < 2) refuse('Tabs', 'needs two or more <Tab>s.')
+  const elements = Children.toArray(children).filter(isValidElement)
+  if (elements.some((element) => element.type !== Tab)) refuse('Tabs', 'holds only <Tab>s.')
+  if (elements.length < 2) refuse('Tabs', 'needs two or more <Tab>s.')
   return <div>{children}</div>
 }
 
