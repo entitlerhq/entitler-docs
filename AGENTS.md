@@ -24,7 +24,7 @@ content elsewhere; nothing here is site code. CONTRIBUTING.md is the full guide:
 Pages use only these components, with only these props:
 
 - `<Callout type="note|tip|warning" title="…">`: a note or warning; both props optional.
-- `<Tabs items={["A", "B"]}>` holding `<Tab value="A">`: alternatives, such as one example in
+- `<Tabs>` holding two or more `<Tab value="A">`: alternatives, such as one example in
   several languages.
 - `<Cards>` holding `<Card title="…" href="…">`: links to other pages, each with a sentence.
 

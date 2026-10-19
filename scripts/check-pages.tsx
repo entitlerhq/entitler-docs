@@ -36,6 +36,8 @@ function onlyKnownComponents(file: string) {
         } else if (!props.includes(attribute.name)) {
           const accepted = props.length > 0 ? props.join(', ') : 'no props'
           report(file, `line ${line}: <${name}> has "${attribute.name}"; it takes ${accepted}.`)
+        } else if (typeof attribute.value !== 'string') {
+          report(file, `line ${line}: <${name}> ${attribute.name} must be a quoted string.`)
         }
       }
     })
