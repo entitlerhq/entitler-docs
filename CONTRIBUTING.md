@@ -78,7 +78,7 @@ curl https://api.entitler.dev/keys/self -H "Authorization: Bearer $ENTITLER_KEY"
   </Tab>
   <Tab value="JavaScript">
 
-```js
+```javascript
 await fetch('https://api.entitler.dev/keys/self', { headers: { Authorization: `Bearer ${key}` } })
 ```
 
@@ -87,6 +87,12 @@ await fetch('https://api.entitler.dev/keys/self', { headers: { Authorization: `B
 ````
 
 Leave a blank line around Markdown inside a component, as above, so it is read as Markdown.
+
+## Code
+
+Label every code block with its language, one of `bash`, `javascript`, `typescript`, `json`,
+`kotlin` or `swift`, so the site highlights it: ```` ```bash ````. Use `bash` for curl and other
+shell commands.
 
 ## Links
 
