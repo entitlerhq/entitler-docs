@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { evaluate } from '@mdx-js/mdx'
 import type { Root } from 'mdast'
 import { createElement } from 'react'
@@ -7,6 +7,7 @@ import * as runtime from 'react/jsx-runtime'
 import { renderToStaticMarkup } from 'react-dom/server'
 import remarkGfm from 'remark-gfm'
 import { visit } from 'unist-util-visit'
+import { visitParents } from 'unist-util-visit-parents'
 
 import { COMPONENT_PROPS, COMPONENTS, type Component, standIns } from './components'
 import { contentFiles, display, NAV_LINK, NAV_SEPARATOR, readPage } from './pages'
@@ -19,8 +20,30 @@ function report(file: string, problem: string) {
   problems.push(`${display(file)}: ${problem}`)
 }
 
+function isElement(node: { type: string }) {
+  return node.type === 'mdxJsxFlowElement' || node.type === 'mdxJsxTextElement'
+}
+
+function placementProblem(name: string, ancestors: readonly { type: string; name?: unknown }[]) {
+  if (ancestors.some((ancestor) => ancestor.type === 'heading')) {
+    return `<${name}> cannot sit in a heading, which the table of contents copies.`
+  }
+  if (ancestors.some((ancestor) => ancestor.type === 'footnoteDefinition')) {
+    return `<${name}> cannot sit in a footnote, which renders after the page body.`
+  }
+  if (name === 'Tab' && ancestors.findLast(isElement)?.name !== 'Tabs') {
+    return '<Tab> belongs directly inside <Tabs>.'
+  }
+  return undefined
+}
+
 function onlyKnownComponents(file: string) {
   return () => (tree: Root) => {
+    visitParents(tree, (node, ancestors) => {
+      if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return
+      const problem = placementProblem(node.name ?? '<>', ancestors)
+      if (problem) report(file, `line ${node.position?.start.line}: ${problem}`)
+    })
     visit(tree, (node) => {
       if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return
       const name = node.name ?? '<>'
@@ -153,6 +176,11 @@ function checkMeta(file: string) {
 
 const pages = contentFiles('.mdx')
 const metas = contentFiles('meta.json')
+for (const page of pages) {
+  if (/^\(.+\)$/.test(basename(page, '.mdx'))) {
+    report(page, 'a page name in brackets is a folder group, which only folders may be.')
+  }
+}
 for (const file of contentFiles('.md')) {
   report(file, 'is a .md file; pages are .mdx files, and the site builds no other kind.')
 }
