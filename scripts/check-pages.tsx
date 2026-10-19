@@ -13,6 +13,7 @@ import { contentFiles, display, readPage } from './pages'
 
 const problems: string[] = []
 const allowed = new Set<string>(COMPONENTS)
+const CODE_LANGUAGES = ['bash', 'javascript', 'typescript', 'json', 'kotlin', 'swift']
 
 function report(file: string, problem: string) {
   problems.push(`${display(file)}: ${problem}`)
@@ -25,6 +26,14 @@ function onlyKnownComponents(file: string) {
       const name = node.name ?? '<>'
       if (!allowed.has(name)) {
         report(file, `line ${node.position?.start.line}: <${name}> is not one of ${COMPONENTS.join(', ')}.`)
+      }
+    })
+    visit(tree, 'code', (node) => {
+      if (!node.lang || !CODE_LANGUAGES.includes(node.lang)) {
+        report(
+          file,
+          `line ${node.position?.start.line}: label the code block with one of ${CODE_LANGUAGES.join(', ')}, not "${node.lang ?? ''}".`,
+        )
       }
     })
     visit(tree, ['mdxjsEsm', 'mdxFlowExpression', 'mdxTextExpression'], (node) => {

@@ -28,7 +28,8 @@ Pages use only these components, with only these props:
   several languages.
 - `<Cards>` holding `<Card title="…" href="…">`: links to other pages, each with a sentence.
 
-No imports, exports, `{expressions}` or HTML elements. Every page has frontmatter with exactly a
+Label every code block with `bash`, `javascript`, `typescript`, `json`, `kotlin` or `swift`, the
+languages the site highlights. No imports, exports, `{expressions}` or HTML elements. Every page has frontmatter with exactly a
 `title` and a `description`, and is listed in its folder's `meta.json`. Link to pages by their
 address from the root (`/guides/first-page#a-heading`) and to the API reference as
 `/api-reference` only.
