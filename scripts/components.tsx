@@ -1,6 +1,16 @@
 import type { ReactNode } from 'react'
 
-export const COMPONENTS = ['Callout', 'Tabs', 'Tab', 'Cards', 'Card'] as const
+export const COMPONENT_PROPS = {
+  Callout: ['type', 'title'],
+  Tabs: ['items'],
+  Tab: ['value'],
+  Cards: [],
+  Card: ['title', 'href'],
+} as const satisfies Record<string, readonly string[]>
+
+export type Component = keyof typeof COMPONENT_PROPS
+
+export const COMPONENTS = Object.keys(COMPONENT_PROPS) as Component[]
 
 const CALLOUT_TYPES = ['note', 'tip', 'warning']
 

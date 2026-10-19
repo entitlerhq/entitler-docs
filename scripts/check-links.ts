@@ -7,7 +7,9 @@ import remarkParse from 'remark-parse'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import { API_REFERENCE_URL, contentFiles, display, readPage } from './pages'
+import { readFileSync } from 'node:fs'
+
+import { API_REFERENCE_URL, contentFiles, display, NAV_LINK, readPage } from './pages'
 
 type Link = { file: string; line: number; href: string }
 
@@ -60,8 +62,26 @@ function problemWith(link: Link, fromUrl: string) {
   return undefined
 }
 
-const problems = links.flatMap((link) => {
-  const problem = problemWith(link, readPage(link.file).url)
+function navigationLinks(file: string): Link[] {
+  const text = readFileSync(file, 'utf8')
+  const parsed: unknown = JSON.parse(text)
+  const pages =
+    typeof parsed === 'object' && parsed !== null && 'pages' in parsed && Array.isArray(parsed.pages)
+      ? parsed.pages
+      : []
+  return pages.flatMap((entry) => {
+    const href = typeof entry === 'string' ? NAV_LINK.exec(entry)?.[1] : undefined
+    if (!href) return []
+    const line = text.slice(0, text.indexOf(entry)).split('\n').length
+    return [{ file, line, href }]
+  })
+}
+
+const navigation = contentFiles('meta.json').flatMap(navigationLinks)
+
+const problems = [...links, ...navigation].flatMap((link) => {
+  const fromUrl = link.file.endsWith('.mdx') ? readPage(link.file).url : '/'
+  const problem = problemWith(link, fromUrl)
   return problem ? [`${display(link.file)}:${link.line}: ${problem}`] : []
 })
 
@@ -69,4 +89,6 @@ if (problems.length > 0) {
   process.stderr.write(`${problems.join('\n')}\n\n${problems.length} broken link(s).\n`)
   process.exit(1)
 }
-process.stdout.write(`${links.length} links across ${anchors.size} pages resolve.\n`)
+process.stdout.write(
+  `${links.length} links across ${anchors.size} pages and ${navigation.length} navigation links resolve.\n`,
+)
