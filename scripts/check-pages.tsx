@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, join, relative, sep } from 'node:path'
 import { evaluate } from '@mdx-js/mdx'
-import type { Root } from 'mdast'
+import type { Heading, Root } from 'mdast'
 import { createElement } from 'react'
 import * as runtime from 'react/jsx-runtime'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -10,7 +10,7 @@ import { visit } from 'unist-util-visit'
 import { visitParents } from 'unist-util-visit-parents'
 
 import { COMPONENT_PROPS, COMPONENTS, type Component, standIns } from './components'
-import { contentFiles, display, NAV_LINK, NAV_SEPARATOR, readPage } from './pages'
+import { CONTENT_DIR, contentFiles, display, NAV_LINK, NAV_SEPARATOR, readPage } from './pages'
 
 const problems: string[] = []
 const allowed = new Set<string>(COMPONENTS)
@@ -31,14 +31,48 @@ function placementProblem(name: string, ancestors: readonly { type: string; name
   if (ancestors.some((ancestor) => ancestor.type === 'footnoteDefinition')) {
     return `<${name}> cannot sit in a footnote, which renders after the page body.`
   }
-  if (name === 'Tab' && ancestors.findLast(isElement)?.name !== 'Tabs') {
+  if (name === 'Tab' && effectiveParent(ancestors)?.name !== 'Tabs') {
     return '<Tab> belongs directly inside <Tabs>.'
   }
   return undefined
 }
 
+type Ancestor = { type: string; name?: unknown; children?: { type: string; value?: unknown }[] }
+
+function effectiveParent(ancestors: readonly Ancestor[]) {
+  const parent = ancestors.at(-1)
+  const unwrapped =
+    parent?.type === 'paragraph' &&
+    (parent.children ?? []).every(
+      (child) =>
+        isElement(child) ||
+        (child.type === 'text' && typeof child.value === 'string' && child.value.trim() === ''),
+    )
+  return unwrapped ? ancestors.at(-2) : parent
+}
+
+const HEADING_ID = /\s\[#[a-z0-9-]+]\s*$/
+
+function headingIdProblem(heading: Heading) {
+  const texts: string[] = []
+  visit(heading, 'text', (node) => {
+    texts.push(node.value)
+  })
+  const text = texts.join('')
+  if (!text.includes('[#')) return undefined
+  const last = heading.children.at(-1)
+  const single = text.indexOf('[#') === text.lastIndexOf('[#')
+  return single && last?.type === 'text' && HEADING_ID.test(last.value)
+    ? undefined
+    : 'a custom heading id is written " [#id]" at the end, with a-z, 0-9 and - only.'
+}
+
 function onlyKnownComponents(file: string) {
   return () => (tree: Root) => {
+    visit(tree, 'heading', (node) => {
+      const problem = headingIdProblem(node)
+      if (problem) report(file, `line ${node.position?.start.line}: ${problem}`)
+    })
     visitParents(tree, (node, ancestors) => {
       if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return
       const problem = placementProblem(node.name ?? '<>', ancestors)
@@ -115,6 +149,9 @@ function checkFrontmatter(file: string, frontmatter: unknown) {
     const value = fields[key]
     const word = typeof value === 'string' ? /\b(get|gets|getting|got|gotten)\b/i.exec(value) : null
     if (word) report(file, `${key} uses "${word[0]}": name the thing instead.`)
+    if (typeof value === 'string' && (/[[\]<>`\\]/.test(value) || /\p{Cc}/u.test(value))) {
+      report(file, `frontmatter ${key} must be plain text, without [ ] < > \` \\ or control characters.`)
+    }
   }
   if (typeof fields.description !== 'string' || fields.description.trim() === '') {
     report(file, 'frontmatter needs a description, one sentence for search results and link previews.')
@@ -185,6 +222,12 @@ for (const file of contentFiles('.md')) {
   report(file, 'is a .md file; pages are .mdx files, and the site builds no other kind.')
 }
 const listed = new Set(metas.flatMap(checkMeta))
+for (const page of pages) {
+  const segments = relative(CONTENT_DIR, page).split(sep)
+  if (segments.some((segment) => !/^[a-z0-9_.()-]+$/.test(segment) || /^\.+$/.test(segment))) {
+    report(page, 'folder and page names use a-z, 0-9, -, _, . and brackets only.')
+  }
+}
 for (const page of pages) {
   const dir = dirname(page)
   const meta = join(dir, 'meta.json')
