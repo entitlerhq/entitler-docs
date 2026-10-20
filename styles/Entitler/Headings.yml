@@ -1,0 +1,33 @@
+extends: capitalization
+message: "Use sentence case for the heading '%s'."
+level: error
+scope: heading
+match: $sentence
+indicators:
+  - ":"
+exceptions:
+  - API
+  - APIs
+  - Card
+  - Cards
+  - Callout
+  - Checkout
+  - Dart
+  - ETags
+  - Entitler
+  - GitHub
+  - Go
+  - JavaScript
+  - JSON
+  - Kotlin
+  - PHP
+  - Python
+  - Ruby
+  - Rust
+  - SDK
+  - SDKs
+  - Stripe
+  - Swift
+  - Tab
+  - Tabs
+  - TypeScript

@@ -1,0 +1,10 @@
+extends: existence
+message: "Avoid '%s': name the thing instead, such as 'the customer's entitlements' or 'Quick start'."
+level: error
+ignorecase: true
+tokens:
+  - get
+  - gets
+  - getting
+  - got
+  - gotten
