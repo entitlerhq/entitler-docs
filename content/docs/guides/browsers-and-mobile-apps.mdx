@@ -22,7 +22,7 @@ Ask only for the scopes the app needs. Add `usage:write` only when the app repor
 
 ## 2. Call Entitler from the app
 
-The SDKs fetch a token from your route when they need one, and fetch a new one before it expires.
+The SDKs fetch a token from your route when they have none, and again when Entitler refuses the one they have.
 
 <Tabs>
   <Tab value="TypeScript">
