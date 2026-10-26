@@ -1,0 +1,56 @@
+---
+title: Features and entitlements
+description: Features are the things you sell, and a customer's entitlements say which of them they hold and how much.
+---
+
+A feature is one thing a plan can give: access to priority support, a monthly allowance of AI credits, a number of seats. You define features in the dashboard and name each one with a key, such as `priority_support` or `ai_credits`, which your code uses to ask about it.
+
+## Kinds of feature
+
+| Kind | Value | Example |
+| ---- | ----- | ------- |
+| Switch | On or off | `priority_support`: the customer has it or not |
+| Metered | An allowance, a count or unlimited, that usage draws down and that resets | `ai_credits`: 100 a month |
+| Configuration | A count or unlimited that your app reads and enforces itself | `seats`: up to 5 members |
+| Group | Several features that come together | `analytics`, which turns on its reports |
+
+## Entitlements
+
+A customer's entitlement to a feature is the answer to "may they use it, and how much?". Entitler works it out from everything the customer holds. Their plan sets the starting value. Add-ons add their value, times their quantity, to metered and configuration features, and turn on switches. A grant turns on a switch, raises a configuration value, or adds to a metered allowance.
+
+```bash
+curl "$ENTITLER_API/v1/customers/ada/entitlements/ai_credits" \
+  -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+```json
+{
+  "customer": { "externalId": "ada" },
+  "entitlement": {
+    "featureKey": "ai_credits",
+    "kind": "ENTITLED_FEATURE_KIND_METERED",
+    "value": { "metered": { "count": 100 } },
+    "entitled": true,
+    "meter": { "used": 30, "held": 0, "remaining": { "count": 70 }, "resetsAt": 1793577600, "banked": 0 },
+    "sources": [{ "plan": { "planKey": "pro", "planName": "Pro", "value": { "metered": { "count": 100 } } } }],
+    "upgrades": [{ "planKey": "scale", "planName": "Scale", "kind": "UPGRADE_KIND_PLAN", "move": "UPGRADE_MOVE_UPGRADE", "action": "UPGRADE_ACTION_BUY" }]
+  },
+  "asOf": 1793052000
+}
+```
+
+- `entitled` is the one field most code needs. It is true when the customer may use the feature now.
+- `value` is the feature's value for this customer: `switch`, `metered`, `configuration` or `group`. A count of `{ "unlimited": {} }` means no limit.
+- `meter` is on metered features: `used` this period, `held` by open [holds](/guides/meter-usage-with-holds), `remaining`, `banked` from earlier periods when the feature carries unused allowance over, and `resetsAt`, the Unix time the meter resets.
+- `sources` says where the value comes from: the default plan, a plan, an add-on, a grant or a group.
+- `upgrades` lists the plans and add-ons that would give the customer more of the feature, and whether they can buy one themselves (`UPGRADE_ACTION_BUY`) or should contact you (`UPGRADE_ACTION_CONTACT`). Use it to show the right upgrade prompt.
+
+`GET /v1/customers/{externalId}/entitlements` answers every entitlement of the customer at once, which suits a page that gates several features.
+
+## When answers change
+
+`nextChangeAt`, when present, is the Unix time the customer's entitlements change next on their own, such as a grant ending or a booked plan change. An answer is good until then, or until you change the customer. Every answer carries an `ETag`: send it back in `If-None-Match`, and an unchanged answer is `304 Not Modified` with no body. Answers that include a meter are never cached, so `remaining` is always current.
+
+## Which catalogue answers
+
+Entitlements come from the release of your plans and features that the customer's environment serves. `served` in each answer names that release, so you can tell which version of your plans an answer came from.

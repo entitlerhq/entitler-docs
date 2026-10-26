@@ -1,0 +1,88 @@
+---
+title: Meter usage with holds
+description: Reserve part of a customer's allowance before slow or costly work, then settle the amount it used.
+---
+
+Some work only knows its cost once it ends, such as an AI request that uses an unknown number of tokens. Reporting after the work lets a customer go past their allowance; reporting before it charges them for work that might fail. A hold solves both: it reserves an amount before the work, and you settle the real amount after it.
+
+## How a hold works
+
+1. **Hold** an amount before the work. The hold is refused when it doesn't fit the customer's remaining allowance, so you don't start work they can't pay for.
+2. **Settle** the hold with the amount the work used, up to the amount held. Settling records it as usage.
+3. Or **release** the hold when the work fails, and nothing is recorded.
+
+While a hold is open, its amount counts as `held` on the meter, so other usage can't spend it. A hold expires after `ttlSeconds`, 300 by default and at most 3,600, and an expired hold records nothing, so a crash never leaves a customer charged.
+
+## With an SDK
+
+The SDKs hold, run your work and settle what it says it used, or release the hold when the work throws:
+
+<Tabs>
+  <Tab value="TypeScript">
+
+```typescript
+const reply = await entitler.customer('ada').withHold(
+  'ai_credits',
+  500,
+  async ({ hold, signal }) => {
+    const answer = await summarise(document, { signal })
+    hold.use(answer.tokens)
+    return answer
+  },
+  { idempotencyKey: `summary-${job.id}` },
+)
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+let summary = try await ada.withHold(of: "ai_credits", amount: 500, idempotencyKey: "summary-\(jobID)") { hold in
+  let answer = try await summarise(document)
+  try hold.use(answer.tokens)
+  return answer.summary
+}
+```
+
+  </Tab>
+</Tabs>
+
+## Over HTTP
+
+Place the hold:
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/usage/holds" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"featureKey": "ai_credits", "amount": 500, "ttlSeconds": 600, "idempotencyKey": "summary-81"}'
+```
+
+The answer has the shape of every usage answer. When `tracked.usage.outcome` is `USAGE_OUTCOME_HELD`, `tracked.usage.holdId` names the hold and `expiresAtMs` says when it lapses; `USAGE_OUTCOME_REFUSED` means it didn't fit.
+
+Settle it with the amount used:
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/usage/holds/$HOLD_ID:settle" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 312}'
+```
+
+Or release it:
+
+```bash
+curl -X DELETE "$ENTITLER_API/v1/customers/ada/usage/holds/$HOLD_ID" \
+  -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+`GET /v1/customers/ada/usage/holds/{holdId}` reads a hold's state: open, settled, released or expired.
+
+## Retries and refusals
+
+- Placing a hold takes an idempotency key: placing it again with the same key answers the same hold.
+- Settling again with the same amount answers the first settlement; another amount is `HOLD_SETTLED`.
+- Settling an expired hold is `HOLD_EXPIRED`, and a released one `HOLD_RELEASED`. Report the usage instead if the work did finish.
+- Settling more than the hold is refused. Hold the most the work can use.
+
+Only the credential that placed a hold, or a key with `customers:write`, can settle or release it.

@@ -1,0 +1,73 @@
+---
+title: Errors
+description: Read a refusal's status, code and reason, and decide whether to fix the request, retry or tell the customer.
+---
+
+A request Entitler refuses answers an HTTP status from `400` up and a body that says why:
+
+```json
+{
+  "error": {
+    "code": "NotFound",
+    "reason": "CUSTOMER_NOT_FOUND",
+    "parameters": {}
+  }
+}
+```
+
+- `code` is the kind of refusal, one of the names below. It sets the HTTP status.
+- `reason` is the exact refusal, in capitals, such as `CUSTOMER_NOT_FOUND`. Branch on the reason; it is stable.
+- `parameters` add detail, such as `field` for the field that was wrong or `capability` for the capability a plan lacks.
+
+Every answer, refusals included, carries an `x-request-id` header. Quote it when you contact support.
+
+Refused usage is not an error: a gated report that doesn't fit answers `200` with the outcome `USAGE_OUTCOME_REFUSED`. See [Usage and meters](/concepts/usage-and-meters#gate-and-observe).
+
+## Codes and statuses
+
+| Status | Code | Meaning | Retry? |
+| ------ | ---- | ------- | ------ |
+| 400 | `InvalidArgument`, `FailedPrecondition`, `OutOfRange` | The request is malformed, or the customer or your plan isn't in a state that allows it | No: fix the request |
+| 401 | `Unauthenticated` | The credential is missing or invalid | No |
+| 403 | `PermissionDenied` | The credential may not do this | No |
+| 404 | `NotFound` | The customer, feature or other resource doesn't exist | No |
+| 409 | `AlreadyExists`, `Aborted` | It exists already, or a concurrent change won | Read again, then retry |
+| 429 | `ResourceExhausted` | A rate limit or allowance was reached | After `Retry-After` |
+| 499 | `Cancelled` | The request was cancelled | Yes |
+| 500 | `Internal`, `Unknown`, `DataLoss` | Something failed on Entitler's side | Yes, if safe to repeat |
+| 501 | `Unimplemented` | No such route or method | No |
+| 503 | `Unavailable` | A service is briefly unavailable | Yes |
+| 504 | `DeadlineExceeded` | The request took too long | Yes, if safe to repeat |
+
+[Limits and retries](/reference/limits-and-retries) says which requests are safe to repeat.
+
+## Reasons you will meet
+
+| Reason | What to do |
+| ------ | ---------- |
+| `CREDENTIAL_REQUIRED` | Send a key or token in `Authorization: Bearer`. |
+| `KEY_INACTIVE` | The key was revoked, has expired or doesn't exist. Use another. |
+| `CUSTOMER_TOKEN_INVALID` | The customer token has expired or is malformed. Mint a new one. |
+| `IDENTITY_TOKEN_INVALID` | The identity token failed verification, or was sent beside a credential that can't take one. |
+| `ORIGIN_NOT_ALLOWED` | A browser sent a secret key, or a publishable key from an origin not listed on it. |
+| `PERMISSION_DENIED` | The credential lacks the permission, or a customer token named another customer. |
+| `CUSTOMER_REF_INVALID` | `me` was sent with a credential that has no customer of its own, such as a secret key. |
+| `CUSTOMER_NOT_FOUND` | Register the customer, or send `"register": true` where the route takes it. |
+| `FEATURE_NOT_FOUND` | No feature has that key in the catalogue the customer is served. |
+| `EXTERNAL_ID_KEYWORD_RESERVED` | `me` can't be an external ID. |
+| `CUSTOMER_LIMIT_REACHED` | Your Entitler plan's customer limit is reached. |
+| `CAPABILITY_REQUIRED` | Your Entitler plan lacks the capability in `parameters.capability`. |
+| `USAGE_FEATURE_NOT_METERED` | Usage can only be reported for metered features. |
+| `USAGE_KEY_MISMATCH` | The idempotency key was used for a different report. Use a new key. |
+| `IDEMPOTENCY_KEY_REUSED` | The idempotency key was used for a different request. Use a new key. |
+| `USAGE_NOT_FOUND`, `HOLD_NOT_FOUND` | No report or hold with that ID for this customer. |
+| `HOLD_SETTLED`, `HOLD_RELEASED`, `HOLD_EXPIRED` | The hold is already closed. Report the usage instead if the work finished. |
+| `GRANT_LIMIT_REACHED` | The customer holds the most grants allowed. Revoke one first. |
+| `AS_OF_NOT_ALLOWED` | `as_of` works only in test environments. |
+| `CUSTOMER_TOKEN_SCOPE_INVALID` | Name scopes from the [list](/keys-and-tokens#customer-tokens). |
+| `API_RATE_LIMITED`, `USAGE_RATE_LIMITED` | Too many requests. Wait the `Retry-After` seconds. |
+| `API_ALLOWANCE_REACHED` | Your environment's request rate is used up for now. Wait the `Retry-After` seconds. |
+
+## In the SDKs
+
+The SDKs throw an `EntitlerError` with the same fields: `status`, `code`, `reason`, `parameters`, `requestId` from `x-request-id`, and `retryAfter` from `Retry-After`. A request that never received an answer throws a connection or timeout error, which extends `EntitlerError` too.

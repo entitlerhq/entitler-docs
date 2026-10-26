@@ -1,0 +1,84 @@
+---
+title: Usage and meters
+description: Report usage of metered features, and read the meter that counts it against the customer's allowance.
+---
+
+A metered feature has an allowance, such as 100 `ai_credits` a month, and a meter that counts the customer's usage against it. You report usage; Entitler counts it, refuses what doesn't fit when you ask it to, and resets the meter on the feature's schedule.
+
+## Reporting usage
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/usage" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"featureKey": "ai_credits", "amount": 3, "idempotencyKey": "run-42"}'
+```
+
+| Field | Meaning |
+| ----- | ------- |
+| `featureKey` | A metered feature. Usage of any other kind of feature is refused with `USAGE_FEATURE_NOT_METERED`. |
+| `amount` | A whole number, 1 when you leave it out. |
+| `idempotencyKey` | Required. Your own ID for this use, such as a job or message ID. |
+| `mode` | `USAGE_MODE_GATE`, the default, or `USAGE_MODE_OBSERVE`. |
+| `occurredAtMs` | When the use happened, in Unix milliseconds, when it isn't now. |
+| `register` | `true` registers the customer first when they don't exist yet. |
+
+## Gate and observe
+
+- **Gate**, the default, checks and records in one step. When the customer isn't entitled to the feature, or the amount doesn't fit what remains, nothing is recorded and the outcome is `USAGE_OUTCOME_REFUSED`, with `refusal` set to `USAGE_REFUSAL_NOT_ENTITLED` or `USAGE_REFUSAL_OVER_ALLOWANCE`. Use it before you do work you only want to do within the allowance.
+- **Observe** always records the use, and says by how much the meter is past the allowance in `overBy`. Use it for work that has already happened, such as usage you bill for after the fact.
+
+A refused report is a normal answer, `200`, not an error: read `outcome` to decide what to do.
+
+## Idempotency
+
+Every report carries an idempotency key, scoped to the customer. Sending the same report with the same key again records nothing and answers `USAGE_OUTCOME_DUPLICATE` with the first report's result, so retrying after a timeout is always safe. Using the key for a different report, another feature or amount, is refused with `USAGE_KEY_MISMATCH`. A key that was refused can be used again, since a refusal stores nothing.
+
+## The answer
+
+Every usage answer has the same shape: `tracked.usage` says what happened, and `tracked.entitlement` is the feature's entitlement after it, with its meter.
+
+```json
+{
+  "tracked": {
+    "usage": {
+      "outcome": "USAGE_OUTCOME_RECORDED",
+      "mode": "USAGE_MODE_GATE",
+      "amount": 3,
+      "meterChange": 3,
+      "overBy": 0,
+      "late": false,
+      "replayed": false,
+      "usageId": "…"
+    },
+    "entitlement": {
+      "featureKey": "ai_credits",
+      "entitled": true,
+      "meter": { "used": 33, "held": 0, "remaining": { "count": 67 }, "resetsAt": 1793577600, "banked": 0 }
+    }
+  }
+}
+```
+
+## Meters and resets
+
+A meter resets with the customer's billing period, or on the feature's own schedule, such as every day or every week, as you set it on the feature. `resetsAt` is the next reset. A feature can also bank: the allowance a customer didn't use carries into the next period, and shows as `banked`.
+
+A report dated in an earlier period than now is recorded as `late`: it stays in the customer's usage history, and it never changes the current meter.
+
+## Many reports at once
+
+From a server, `POST /v1/usage/events` takes up to 500 events for any customers in one request, in observe mode, and answers each in order. It suits usage you collect and send in batches.
+
+```bash
+curl -X POST "$ENTITLER_API/v1/usage/events" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"events": [{"externalId": "ada", "featureKey": "ai_credits", "amount": 2, "idempotencyKey": "batch-7-1"}]}'
+```
+
+## Reading usage
+
+`GET /v1/customers/{externalId}/usage` lists the customer's recent reports, newest first, with each metered feature's meter. Your key needs `usage:read`.
+
+To correct a report, cancel it with `POST /v1/customers/{externalId}/usage/{usageId}:cancel`, which takes it off the meter, or set the meter with `POST /v1/customers/{externalId}/meters/{featureKey}:adjust`. Both need `customers:write`.

@@ -1,0 +1,176 @@
+---
+title: Quick start
+description: Register a customer, check one of their features and report their usage from your server.
+---
+
+This guide uses a secret key from a test environment, a customer named `ada`, a switch feature named `priority_support` and a metered feature named `ai_credits`. Use the keys of your own features as you follow along.
+
+## Before you start
+
+1. In the Entitler dashboard, create a project, then a plan that includes `priority_support` and a monthly allowance of `ai_credits`, and make it the default plan.
+2. Create a secret key in the project's test environment. A key acts in the environment it was created in, so test customers stay apart from live ones.
+3. Keep the key on your server, in an environment variable:
+
+```bash
+export ENTITLER_KEY="your secret key"
+export ENTITLER_API="https://api.entitler.app"
+```
+
+<Callout type="warning">
+  A secret key acts for your whole environment. Never ship it in a browser or mobile app: those use [customer tokens](/keys-and-tokens#customer-tokens).
+</Callout>
+
+## Register a customer
+
+Name the customer by your own ID, such as your user or account ID. Registering is safe to repeat, so you can register a customer each time they sign in.
+
+<Tabs>
+  <Tab value="curl">
+
+```bash
+curl -X PUT "$ENTITLER_API/v1/customers/ada" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Ada Lovelace", "email": "ada@example.com"}'
+```
+
+  </Tab>
+  <Tab value="TypeScript">
+
+```typescript
+import { EntitlerServer } from '@entitlerhq/entitler'
+
+const entitler = new EntitlerServer({ key: process.env.ENTITLER_KEY ?? '' })
+const ada = entitler.customer('ada')
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+let entitler = EntitlerServer(key: key)
+let ada = entitler.customer("ada")
+```
+
+  </Tab>
+</Tabs>
+
+The customer starts on the default plan, so they hold `priority_support` and their `ai_credits` allowance straight away.
+
+## Check a feature
+
+<Tabs>
+  <Tab value="curl">
+
+```bash
+curl "$ENTITLER_API/v1/customers/ada/entitlements/priority_support" \
+  -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+  </Tab>
+  <Tab value="TypeScript">
+
+```typescript
+if (await ada.isEntitled('priority_support', { default: false })) {
+  openTicket()
+}
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+if await ada.isEntitled(to: "priority_support", default: false) {
+  openTicket()
+}
+```
+
+  </Tab>
+</Tabs>
+
+The answer names the feature, its kind, its value and whether the customer is entitled to it:
+
+```json
+{
+  "customer": { "externalId": "ada" },
+  "entitlement": {
+    "featureKey": "priority_support",
+    "kind": "ENTITLED_FEATURE_KIND_SWITCH",
+    "value": { "switch": true },
+    "entitled": true,
+    "sources": [{ "defaultPlan": { "planKey": "free", "planName": "Free" } }],
+    "upgrades": []
+  },
+  "asOf": 1793052000
+}
+```
+
+The SDKs pass the `default` value back when Entitler can't be reached, so a network problem never locks a customer out of a feature, or lets them into one, unless you choose that.
+
+## Report usage
+
+Report usage of a metered feature as it happens. Every report carries an idempotency key, so a retry is never counted twice.
+
+<Tabs>
+  <Tab value="curl">
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/usage" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"featureKey": "ai_credits", "amount": 3, "idempotencyKey": "run-42"}'
+```
+
+  </Tab>
+  <Tab value="TypeScript">
+
+```typescript
+await ada.recordUsage('ai_credits', 3, { idempotencyKey: 'run-42' })
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+try await ada.recordUsage(of: "ai_credits", amount: 3, idempotencyKey: "run-42")
+```
+
+  </Tab>
+</Tabs>
+
+The answer says what happened and carries the feature's meter after the report:
+
+```json
+{
+  "tracked": {
+    "usage": {
+      "outcome": "USAGE_OUTCOME_RECORDED",
+      "amount": 3,
+      "meterChange": 3,
+      "usageId": "…"
+    },
+    "entitlement": {
+      "featureKey": "ai_credits",
+      "kind": "ENTITLED_FEATURE_KIND_METERED",
+      "entitled": true,
+      "meter": { "used": 3, "held": 0, "remaining": { "count": 97 }, "banked": 0 }
+    }
+  }
+}
+```
+
+By default a report is gated: when it doesn't fit the customer's allowance, nothing is recorded and the outcome is `USAGE_OUTCOME_REFUSED`. [Usage and meters](/concepts/usage-and-meters) explains the other mode and the rest of the answer.
+
+## Next steps
+
+<Cards>
+  <Card title="Keys and customer tokens" href="/keys-and-tokens">
+    Call Entitler from browsers and mobile apps without your secret key.
+  </Card>
+  <Card title="Meter usage with holds" href="/guides/meter-usage-with-holds">
+    Reserve an allowance before slow work, then settle what it used.
+  </Card>
+  <Card title="Errors" href="/reference/errors">
+    Read refusals and decide which ones to retry.
+  </Card>
+</Cards>

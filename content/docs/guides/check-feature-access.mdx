@@ -1,0 +1,108 @@
+---
+title: Check feature access
+description: Gate a feature in your app on the customer's entitlement, and offer the right upgrade when they lack it.
+---
+
+Check a feature where your code decides whether to let a customer use it: before showing a page, enabling a button or running a job.
+
+## Check one feature
+
+<Tabs>
+  <Tab value="TypeScript">
+
+```typescript
+const ada = entitler.customer('ada')
+
+if (await ada.isEntitled('priority_support', { default: false })) {
+  openTicket()
+} else {
+  showUpgrade()
+}
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+if await ada.isEntitled(to: "priority_support", default: false) {
+  openTicket()
+} else {
+  showUpgrade()
+}
+```
+
+  </Tab>
+  <Tab value="curl">
+
+```bash
+curl "$ENTITLER_API/v1/customers/ada/entitlements/priority_support" \
+  -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+  </Tab>
+</Tabs>
+
+`isEntitled` answers `entitled` from the check. Pass a `default`: it is the answer when Entitler can't be reached in time, so choose `false` for features that cost you money and `true` for ones that only make your app better.
+
+## Read the value
+
+Configuration and metered features carry a value as well as `entitled`. Read the check when your app needs the number:
+
+```typescript
+const check = await ada.check('ai_credits')
+if (check.meter && check.meter.remaining !== 'unlimited' && check.meter.remaining < 10) {
+  warnLowCredits(check.meter.remaining)
+}
+```
+
+Over HTTP, `entitlement.value` holds the value, with `{ "unlimited": {} }` for no limit, and `entitlement.meter.remaining` what is left this period.
+
+## Check several features
+
+A page that gates several features can read every entitlement in one request:
+
+<Tabs>
+  <Tab value="TypeScript">
+
+```typescript
+const entitlements = await ada.entitlements()
+const hasPrioritySupport = entitlements.has('priority_support')
+const credits = entitlements.get('ai_credits')
+```
+
+  </Tab>
+  <Tab value="curl">
+
+```bash
+curl "$ENTITLER_API/v1/customers/ada/entitlements" \
+  -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+  </Tab>
+</Tabs>
+
+## Offer an upgrade
+
+When a customer lacks a feature, `upgrades` in the check lists the plans and add-ons that would give it to them:
+
+```json
+{
+  "featureKey": "priority_support",
+  "entitled": false,
+  "upgrades": [
+    {
+      "planKey": "pro",
+      "planName": "Pro",
+      "kind": "UPGRADE_KIND_PLAN",
+      "move": "UPGRADE_MOVE_UPGRADE",
+      "action": "UPGRADE_ACTION_BUY"
+    }
+  ]
+}
+```
+
+Show the first upgrade's `planName`. When its `action` is `UPGRADE_ACTION_BUY`, link to your checkout for that plan, or start a [self-serve plan change](/guides/change-a-plan#let-the-customer-choose); when it is `UPGRADE_ACTION_CONTACT`, link to your sales page.
+
+## Check in the browser or app too
+
+Checks from your server are the ones to trust. Your app can also check, with a [customer token](/keys-and-tokens#customer-tokens), to hide what the customer can't use; see [Browsers and mobile apps](/guides/browsers-and-mobile-apps).

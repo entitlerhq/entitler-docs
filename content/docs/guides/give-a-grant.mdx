@@ -1,0 +1,54 @@
+---
+title: Give a customer a grant
+description: Give one customer a feature or extra allowance outside their plan, for a number of days or for good.
+---
+
+A grant gives one customer a feature value their plan doesn't: priority support for a trial, extra AI credits to make up for an outage, a higher limit for a deal. It lasts the days you choose, or until you revoke it, and needs no change to their plan.
+
+## Give a grant
+
+Turn a switch on for 14 days:
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/grants" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"featureKey": "priority_support", "value": {"on": {}}, "days": 14, "reason": "Trial of priority support"}'
+```
+
+Add 500 to a metered allowance, with no end:
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/grants" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"featureKey": "ai_credits", "value": {"limit": {"count": 500}}, "reason": "Credit for the outage on 3 October"}'
+```
+
+| Field | Meaning |
+| ----- | ------- |
+| `featureKey` | The feature to grant. A group can't be granted; grant its features. |
+| `value` | `{"on": {}}` for a switch, or `{"limit": {"count": n}}` or `{"limit": {"unlimited": {}}}` for a metered or configuration feature. |
+| `days` | How long the grant lasts, up to 3,650. Leave it out for a grant with no end. |
+| `reason` | Why you gave it, kept with the grant in the customer's history. |
+
+The answer is the grant, with its `id`, `from` and `until`. Your key needs `customers:write`.
+
+## How grants add up
+
+- A switch grant turns the feature on.
+- A metered grant adds to the customer's allowance, on top of their plan and add-ons.
+- A configuration grant replaces the plan's value when it is larger.
+
+The customer's entitlement lists each grant in `sources`, and `nextChangeAt` says when the next one ends.
+
+## Revoke a grant
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/grants/$GRANT_ID:revoke" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Trial ended early"}'
+```
+
+A customer can hold up to 50 grants that are live now or start later.

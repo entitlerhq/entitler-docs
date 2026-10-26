@@ -1,6 +1,30 @@
 ---
 title: Entitler documentation
-description: The API reference lists every route of the Entitler API, and an OpenAPI document describes them.
+description: Entitler tells your app which features, limits and usage each customer is entitled to.
 ---
 
-The [API reference](/api-reference) lists the routes your servers and apps call on the Entitler API, and the OpenAPI 3.1 document at [https://api.entitler.app/v1/openapi.json](https://api.entitler.app/v1/openapi.json) describes every one of them.
+Entitler manages your plans, feature access, usage limits and customer grants. You define features and plans in the dashboard, and your servers and apps ask the Entitler API what each customer is entitled to. When you change a plan, the answers change with it, with no deploy.
+
+## How it fits together
+
+- **Features** are the things you sell: a switch such as `priority_support`, a metered allowance such as `ai_credits`, or a configuration value such as a seat count.
+- **Plans** give features to customers. A customer's entitlements come from their plan, their add-ons and any grants you give them.
+- **Customers** are your users or accounts, named by your own ID, such as `ada`.
+- **Usage** draws down metered features. Entitler counts it, refuses it past the allowance when you ask it to, and resets it on the schedule the feature sets.
+
+## Start here
+
+<Cards>
+  <Card title="Quick start" href="/quick-start">
+    Register a customer, check a feature and report usage in a few minutes.
+  </Card>
+  <Card title="Keys and customer tokens" href="/keys-and-tokens">
+    Pick the credential for your servers, browsers and mobile apps.
+  </Card>
+  <Card title="Check feature access" href="/guides/check-feature-access">
+    Gate a feature in your app and show an upgrade when a customer lacks it.
+  </Card>
+  <Card title="API reference" href="/api-reference">
+    Every route, with its parameters, request body and answers.
+  </Card>
+</Cards>
