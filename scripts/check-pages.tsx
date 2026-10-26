@@ -136,7 +136,8 @@ function sentenceCaseProblem(key: string, value: string) {
 }
 
 function sentenceProblem(description: string) {
-  return /^[^.!?]+\.$/.test(description.trim())
+  const text = description.trim()
+  return text.endsWith('.') && !/[.!?]\s/.test(text)
     ? undefined
     : `description "${description}" must be one sentence ending in a full stop.`
 }
