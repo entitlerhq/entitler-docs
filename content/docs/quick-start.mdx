@@ -24,36 +24,12 @@ export ENTITLER_API="https://api.entitler.app"
 
 Name the customer by your own ID, such as your user or account ID. Registering is safe to repeat, so you can register a customer each time they sign in.
 
-<Tabs>
-  <Tab value="curl">
-
 ```bash
 curl -X PUT "$ENTITLER_API/v1/customers/ada" \
   -H "Authorization: Bearer $ENTITLER_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Ada Lovelace", "email": "ada@example.com"}'
 ```
-
-  </Tab>
-  <Tab value="TypeScript">
-
-```typescript
-import { EntitlerServer } from '@entitlerhq/entitler'
-
-const entitler = new EntitlerServer({ key: process.env.ENTITLER_KEY ?? '' })
-const ada = entitler.customer('ada')
-```
-
-  </Tab>
-  <Tab value="Swift">
-
-```swift
-let entitler = try EntitlerServer(key: key)
-let ada = try entitler.customer("ada")
-```
-
-  </Tab>
-</Tabs>
 
 The customer starts on the default plan, so they hold `priority_support` and their `ai_credits` allowance straight away.
 
@@ -71,6 +47,11 @@ curl "$ENTITLER_API/v1/customers/ada/entitlements/priority_support" \
   <Tab value="TypeScript">
 
 ```typescript
+import { EntitlerServer } from '@entitlerhq/entitler'
+
+const entitler = new EntitlerServer({ key: process.env.ENTITLER_KEY ?? '' })
+const ada = entitler.customer('ada')
+
 if (await ada.isEntitled('priority_support', { default: false })) {
   openTicket()
 }
@@ -80,6 +61,9 @@ if (await ada.isEntitled('priority_support', { default: false })) {
   <Tab value="Swift">
 
 ```swift
+let entitler = try EntitlerServer(key: key)
+let ada = try entitler.customer("ada")
+
 if await ada.isEntitled(to: "priority_support", default: false) {
   openTicket()
 }
@@ -109,7 +93,7 @@ The SDKs pass the `default` value back when Entitler can't be reached, so a netw
 
 ## Report usage
 
-Report usage of a metered feature as it happens. Every report carries an idempotency key, so a retry is never counted twice.
+Report usage of a metered feature as it happens. Every report carries an idempotency key that names this one use, such as the ID of the run that used the credits. Send the same key again only when you retry that report, so a retry is never counted twice.
 
 <Tabs>
   <Tab value="curl">

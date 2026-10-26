@@ -74,14 +74,14 @@ never `{expressions}`: the site refuses to build a page that breaks these rules.
   <Tab value="curl">
 
 ```bash
-curl https://api.entitler.app/v1/caller -H "Authorization: Bearer $ENTITLER_KEY"
+curl "$ENTITLER_API/v1/caller" -H "Authorization: Bearer $ENTITLER_KEY"
 ```
 
   </Tab>
   <Tab value="JavaScript">
 
 ```javascript
-await fetch('https://api.entitler.app/v1/caller', { headers: { Authorization: `Bearer ${key}` } })
+await fetch(`${api}/v1/caller`, { headers: { Authorization: `Bearer ${key}` } })
 ```
 
   </Tab>
@@ -114,8 +114,9 @@ shell commands.
 - No vague "what" clauses, such as "what they can use" or "what each plan includes": name the
   thing, such as "their features and limits".
 - Every fact must match the live API, described by the OpenAPI document at
-  `https://api.entitler.app/v1/openapi.json`. Show requests with curl against
-  `https://api.entitler.app`, with keys from `$ENTITLER_KEY`.
+  `https://api.entitler.app/v1/openapi.json`. Show requests with curl against `$ENTITLER_API`,
+  which the quick start sets, with keys from `$ENTITLER_KEY`. Never write the API's address into
+  an example.
 - Describe the product and the API only: no internal names, plans or dates for future features.
 
 ## Checks
