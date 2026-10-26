@@ -3,7 +3,7 @@ title: Keys and customer tokens
 description: Keep a secret key on your servers, and give browsers and mobile apps a credential for one customer.
 ---
 
-Every request carries one credential in the `Authorization` header, as `Bearer` followed by the key or token. Which one to use depends on where the code runs.
+Every request carries a key or a customer token in the `Authorization` header, as `Bearer` followed by the key or token. A request with a publishable key also carries the user's identity token, in the `Entitler-Identity-Token` header. Which credential to use depends on where the code runs.
 
 | Where the code runs | Credential | Acts for |
 | ------------------- | ---------- | -------- |

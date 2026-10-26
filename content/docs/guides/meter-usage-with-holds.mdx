@@ -82,7 +82,7 @@ curl -X DELETE "$ENTITLER_API/v1/customers/ada/usage/holds/$HOLD_ID" \
 
 - Placing a hold takes an idempotency key: placing it again with the same key answers the same hold.
 - Settling again with the same amount answers the first settlement; another amount is `HOLD_SETTLED`.
-- Settling an expired hold is `HOLD_EXPIRED`, and a released one `HOLD_RELEASED`. Report the usage instead if the work did finish.
+- Settling an expired hold is `HOLD_EXPIRED`, and a released one `HOLD_RELEASED`. If the work did finish, report its usage instead, with a key of its own: holds and reports share a customer's keys. Report it in observe mode if it must count even when the allowance has run out.
 - Settling more than the hold is refused. Hold the most the work can use.
 
 Only the credential that placed a hold, or a key with `customers:write`, can settle or release it.

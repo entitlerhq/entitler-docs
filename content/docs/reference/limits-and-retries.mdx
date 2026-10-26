@@ -20,7 +20,7 @@ Retry those after a timeout, a lost connection, or a `408`, `429`, `500`, `502`,
 
 ## Idempotency keys
 
-Usage reports, holds and other writes that create something take an `idempotencyKey` in the body. Use an ID from your own system for the work, such as a job or message ID, never a random value made at the moment you send: a retry must send the same key. A repeat with the same key and the same request answers the first result; the same key with a different request is refused.
+Usage reports, holds and other writes that create something take an `idempotencyKey` in the body. Use an ID from your own system for the work, such as a job or message ID, never a random value made at the moment you send: a retry must send the same key. A repeat with the same key and the same request answers the first result; the same key with a different request is refused. A refused usage report or hold stores nothing, so its key can be used again, for example for a revised report.
 
 ## How the SDKs retry
 
