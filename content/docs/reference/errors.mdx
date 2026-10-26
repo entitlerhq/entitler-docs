@@ -70,4 +70,4 @@ Refused usage is not an error: a gated report that doesn't fit answers `200` wit
 
 ## In the SDKs
 
-The SDKs throw an `EntitlerError` with the same fields: `status`, `code`, `reason`, `parameters`, `requestId` from `x-request-id`, and `retryAfter` from `Retry-After`. A request that never received an answer throws a connection or timeout error, which extends `EntitlerError` too.
+The SDKs throw an `EntitlerError`. A refusal carries the same fields, with `requestId` from `x-request-id` and `retryAfter` from `Retry-After`: in TypeScript it is an `ApiError`, and in Swift `EntitlerError.api(APIError)`. A request that never received an answer is a connection or timeout error instead, with none of those fields.
