@@ -2,7 +2,7 @@
 
 Instructions for coding agents working in this repository.
 
-The public pages of docs.entitler.dev: MDX in `content/docs`, navigation in `meta.json` files and
+The public pages of docs.entitler.co: MDX in `content/docs`, navigation in `meta.json` files and
 the checks in `scripts/` and `styles/`. The site, the API reference and search are built from this
 content elsewhere; nothing here is site code. CONTRIBUTING.md is the full guide: follow it.
 
@@ -14,9 +14,9 @@ content elsewhere; nothing here is site code. CONTRIBUTING.md is the full guide:
   Questions ("What happens when…?") are fine.
 - No vague "what" clauses ("what they can use", "what each plan includes"): name the thing, such as
   "their features and limits".
-- Every fact must match the live API: the OpenAPI documents at
-  `https://api.entitler.dev/customers/openapi.json` and `https://api.entitler.dev/keys/openapi.json`.
-  Read them before writing about a route; never describe behaviour they do not.
+- Every fact must match the live API: the OpenAPI document at
+  `https://api.entitler.app/v1/openapi.json`. Read it before writing about a route; never describe
+  behaviour it does not.
 - Describe the product and the public API only: no internal names, file paths, plans or roadmap.
 
 ## Components
@@ -53,9 +53,9 @@ From the repository root, with Bun and Vale installed:
   `continue-on-error` or path filter to the other jobs, and never weaken a check to make it pass.
 - Pin every action to a full commit SHA with its version in a trailing comment, set
   `permissions: contents: read` and `persist-credentials: false` on every checkout.
-- `main` takes changes only through pull requests merged with the rebase method. A push to `main`
-  runs `.github/workflows/deploy.yml`, which asks Workers Builds to rebuild the site through the
-  `DOCS_DEPLOY_HOOK` secret.
+- `main` takes changes only through its merge queue, which rebase-merges a pull request once
+  **All checks passed** succeeds on it. Entitler's release process publishes each commit on `main`
+  to docs.entitler.co; nothing in this repository deploys.
 
 ## Authorship
 
