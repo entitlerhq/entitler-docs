@@ -59,14 +59,19 @@ const check = await entitler.me.check('priority_support')
 
 Every error the SDK throws extends `EntitlerError`. A refusal from the API is an `ApiError`, with `status`, `code`, `reason`, `parameters`, `requestId` and `retryAfter`; `ConnectionError` and `TimeoutError` mean Entitler couldn't be reached. `retryAfter` is in milliseconds. See [Errors](/reference/errors).
 
+Here a report for a customer who isn't registered yet registers them, then sends the same report again, with the same idempotency key.
+
 ```typescript
 import { ApiError } from '@entitlerhq/entitler'
 
+const report = () => ada.recordUsage('ai_credits', 3, { idempotencyKey: 'run-42' })
+
 try {
-  await ada.recordUsage('ai_credits', 3, { idempotencyKey: 'run-42' })
+  await report()
 } catch (error) {
   if (error instanceof ApiError && error.reason === 'CUSTOMER_NOT_FOUND') {
     await registerAda()
+    await report()
   } else {
     throw error
   }

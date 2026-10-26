@@ -57,11 +57,18 @@ let check = try await ada.check("priority_support")
 
 The SDK throws `EntitlerError`. A refusal from the API is `.api(APIError)`, with `status`, `code`, `reason`, `parameters`, `requestID` and `retryAfter` in seconds; `.connection` and `.timeout` mean Entitler couldn't be reached. See [Errors](/reference/errors).
 
+Here a report for a customer who isn't registered yet registers them, then sends the same report again, with the same idempotency key.
+
 ```swift
-do {
+func report() async throws {
   try await ada.recordUsage(of: "ai_credits", amount: 3, idempotencyKey: "run-42")
+}
+
+do {
+  try await report()
 } catch EntitlerError.api(let error) where error.reason == .customerNotFound {
   try await registerAda()
+  try await report()
 }
 ```
 
