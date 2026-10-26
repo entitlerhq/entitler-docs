@@ -57,7 +57,7 @@ const check = await entitler.me.check('priority_support')
 
 ## Errors
 
-Every error the SDK throws extends `EntitlerError`. A refusal from the API is an `ApiError`, with `status`, `code`, `reason`, `parameters`, `requestId` and `retryAfter`; `ConnectionError` and `TimeoutError` mean Entitler couldn't be reached. See [Errors](/reference/errors).
+Every error the SDK throws extends `EntitlerError`. A refusal from the API is an `ApiError`, with `status`, `code`, `reason`, `parameters`, `requestId` and `retryAfter`; `ConnectionError` and `TimeoutError` mean Entitler couldn't be reached. `retryAfter` is in milliseconds. See [Errors](/reference/errors).
 
 ```typescript
 import { ApiError } from '@entitlerhq/entitler'
