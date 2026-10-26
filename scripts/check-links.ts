@@ -9,7 +9,7 @@ import { visit } from 'unist-util-visit'
 
 import { readFileSync } from 'node:fs'
 
-import { API_REFERENCE_URL, contentFiles, display, NAV_LINK, readPage } from './pages'
+import { API_REFERENCE_URL, contentFiles, display, HEADING_ID, NAV_LINK, readPage } from './pages'
 
 type Link = { file: string; line: number; href: string }
 
@@ -23,7 +23,8 @@ for (const file of contentFiles('.mdx')) {
   const slugger = new GithubSlugger()
   const ids = new Set<string>()
   visit(tree, 'heading', (node) => {
-    ids.add(slugger.slug(toString(node)))
+    const text = toString(node)
+    ids.add(HEADING_ID.exec(text)?.[1] ?? slugger.slug(text))
   })
   anchors.set(page.url, ids)
   const line = (offset: number | undefined) => (offset ?? 1) + page.bodyLine - 1

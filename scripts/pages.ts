@@ -6,6 +6,8 @@ export const CONTENT_DIR = join(import.meta.dir, '..', 'content', 'docs')
 export const API_REFERENCE_URL = '/api-reference'
 export const NAV_LINK = /^\[[^\]]+\]\(([^)]+)\)$/
 export const NAV_SEPARATOR = /^---.+---$/
+export const HEADING_ID = /\s\[#([a-z0-9-]+)]\s*$/
+export const ENTRY_NAME = /^(?!\.+$)[a-z0-9_.()-]+$/
 
 export type Page = {
   file: string
