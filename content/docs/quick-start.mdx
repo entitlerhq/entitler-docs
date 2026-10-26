@@ -48,8 +48,8 @@ const ada = entitler.customer('ada')
   <Tab value="Swift">
 
 ```swift
-let entitler = EntitlerServer(key: key)
-let ada = entitler.customer("ada")
+let entitler = try EntitlerServer(key: key)
+let ada = try entitler.customer("ada")
 ```
 
   </Tab>

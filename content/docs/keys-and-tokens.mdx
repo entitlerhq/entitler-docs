@@ -72,7 +72,7 @@ A token holds only the scopes you ask for:
 | `usage:write` | Report the customer's usage and place, settle and release holds. |
 | `billing:self` | Choose, change and cancel the customer's own subscription, and open the billing portal. Your key needs `customers:write` to mint it. |
 
-A token lasts an hour unless you ask for less with `lifetimeSeconds`, from 60 to 3,600. Mint a new one before it expires; the SDKs ask your server for one whenever they need it. Customer tokens work from any origin, so a token that leaks lets someone act as that one customer until it expires, and no more.
+A token lasts an hour unless you ask for less with `lifetimeSeconds`, from 60 to 3,600. The SDKs ask your server for a new one when the one they have is refused. Customer tokens work from any origin, so a token that leaks lets someone act as that one customer until it expires, and no more.
 
 Treat the token as the customer's credential: send it only to the customer it was minted for.
 

@@ -23,7 +23,7 @@ let entitlements = try await entitler.me.entitlements()
 try await entitler.me.recordUsage(of: "ai_credits", amount: 1, idempotencyKey: "message-\(messageID)")
 ```
 
-`tokenProvider` asks your server for a customer token; the client calls it when it has no token or the one it has is about to expire. `me` is the customer the token was minted for.
+`tokenProvider` asks your server for a customer token; the client calls it when it has none, and again when Entitler refuses the one it has. `me` is the customer the token was minted for.
 
 Holds need a token with `usage:write`:
 
@@ -40,15 +40,15 @@ let summary = try await entitler.me.withHold(of: "ai_credits", amount: 500, idem
 When your app signs users in with an identity provider registered on your project, use a publishable key and the user's identity token, and register the customer on sign-in:
 
 ```swift
-let entitler = EntitlerClient(key: publishableKey, identityTokenProvider: { try await signIn.currentIDToken() })
+let entitler = try EntitlerClient(key: publishableKey, identityTokenProvider: { try await signIn.currentIDToken() })
 try await entitler.register()
 ```
 
 ## On your server
 
 ```swift
-let entitler = EntitlerServer(key: key)
-let ada = entitler.customer("ada")
+let entitler = try EntitlerServer(key: key)
+let ada = try entitler.customer("ada")
 
 let check = try await ada.check("priority_support")
 ```

@@ -53,19 +53,19 @@ const entitler = new EntitlerClient({
 const check = await entitler.me.check('priority_support')
 ```
 
-`me` is the customer the token was minted for. The client calls `token` for a new token when it has none or the one it has is about to expire.
+`me` is the customer the token was minted for. The client calls `token` when it has none, and again when Entitler refuses the one it has.
 
 ## Errors
 
-Every error the SDK throws extends `EntitlerError`, with `status`, `code`, `reason`, `parameters`, `requestId` and `retryAfter`; see [Errors](/reference/errors).
+Every error the SDK throws extends `EntitlerError`. A refusal from the API is an `ApiError`, with `status`, `code`, `reason`, `parameters`, `requestId` and `retryAfter`; `ConnectionError` and `TimeoutError` mean Entitler couldn't be reached. See [Errors](/reference/errors).
 
 ```typescript
-import { EntitlerError } from '@entitlerhq/entitler'
+import { ApiError } from '@entitlerhq/entitler'
 
 try {
   await ada.recordUsage('ai_credits', 3, { idempotencyKey: 'run-42' })
 } catch (error) {
-  if (error instanceof EntitlerError && error.reason === 'CUSTOMER_NOT_FOUND') {
+  if (error instanceof ApiError && error.reason === 'CUSTOMER_NOT_FOUND') {
     await registerAda()
   } else {
     throw error
