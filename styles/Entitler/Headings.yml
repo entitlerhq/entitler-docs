@@ -16,6 +16,9 @@ exceptions:
   - ETags
   - Entitler
   - GitHub
+  - HTTP
+  - ID
+  - IDs
   - Go
   - JavaScript
   - JSON

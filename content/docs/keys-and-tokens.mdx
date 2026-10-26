@@ -1,0 +1,97 @@
+---
+title: Keys and customer tokens
+description: Keep a secret key on your servers, and give browsers and mobile apps a credential for one customer.
+---
+
+Every request carries one credential in the `Authorization` header, as `Bearer` followed by the key or token. Which one to use depends on where the code runs.
+
+| Where the code runs | Credential | Acts for |
+| ------------------- | ---------- | -------- |
+| Your servers | A secret key | Every customer in its environment, with the permissions you give it |
+| A browser or mobile app, after your server signs the user in | A customer token | One customer, with the scopes your server asks for |
+| A browser or mobile app that signs users in with your identity provider | A publishable key and the user's identity token | The signed-in customer |
+
+## Secret keys
+
+Create keys in the dashboard. Each key belongs to one environment of a project, such as test or live, and holds the permissions you choose when you create it. Give each server its own key with only the permissions it needs, so you can revoke one without touching the others.
+
+```bash
+curl "$ENTITLER_API/v1/customers/ada/entitlements" \
+  -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+To see which key a request is using and what it may do, call `GET /v1/caller`:
+
+```bash
+curl "$ENTITLER_API/v1/caller" -H "Authorization: Bearer $ENTITLER_KEY"
+```
+
+A secret key is refused from a browser: a request that carries an `Origin` header is answered `ORIGIN_NOT_ALLOWED`.
+
+## Customer tokens
+
+A customer token lets a browser or app act for one customer, and only for them. Your server mints it with a secret key that holds `tokens:mint`, after it has signed the user in, and hands it to the app.
+
+<Tabs>
+  <Tab value="curl">
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/tokens" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"scopes": ["CUSTOMER_TOKEN_SCOPE_ENTITLEMENTS_READ", "CUSTOMER_TOKEN_SCOPE_USAGE_WRITE"]}'
+```
+
+  </Tab>
+  <Tab value="TypeScript">
+
+```typescript
+const { token } = await entitler.customer('ada').token({
+  scopes: ['entitlements:read', 'usage:write'],
+})
+```
+
+  </Tab>
+</Tabs>
+
+```json
+{
+  "token": "ct…",
+  "tokenId": "…",
+  "scopes": ["CUSTOMER_TOKEN_SCOPE_ENTITLEMENTS_READ", "CUSTOMER_TOKEN_SCOPE_USAGE_WRITE"],
+  "expiresAt": 1793055600
+}
+```
+
+A token holds only the scopes you ask for:
+
+| Scope | Lets the app |
+| ----- | ------------ |
+| `entitlements:read` | Check the customer's features and list their entitlements. Tokens hold it when you name no scopes. |
+| `usage:read` | Read the customer's usage and holds. |
+| `usage:write` | Report the customer's usage and place, settle and release holds. |
+| `billing:self` | Choose, change and cancel the customer's own subscription, and open the billing portal. Your key needs `customers:write` to mint it. |
+
+A token lasts an hour unless you ask for less with `lifetimeSeconds`, from 60 to 3,600. Mint a new one before it expires; the SDKs ask your server for one whenever they need it. Customer tokens work from any origin, so a token that leaks lets someone act as that one customer until it expires, and no more.
+
+Treat the token as the customer's credential: send it only to the customer it was minted for.
+
+## Publishable keys and identity tokens
+
+When your app signs users in with an identity provider that issues signed identity tokens, the app can call Entitler with a publishable key and the user's identity token, with no server of yours in between.
+
+1. Register the identity provider in the project's settings in the dashboard.
+2. Create a publishable key in the same environment and list the origins of your web app on it.
+3. Send the key as the bearer and the user's identity token in the `Entitler-Identity-Token` header.
+
+```bash
+curl "$ENTITLER_API/v1/customers/me/entitlements" \
+  -H "Authorization: Bearer $ENTITLER_PUBLISHABLE_KEY" \
+  -H "Entitler-Identity-Token: $ID_TOKEN"
+```
+
+Entitler verifies the identity token and acts as the customer it names. A publishable key can hold only `catalogue:read`, `entitlements:read`, `usage:read`, `usage:write` and `customers:register`, and an identity caller holds those the identity provider allows too. From a browser, a publishable key works only from the origins listed on it.
+
+## Which customer a token names
+
+A customer token or identity caller is bound to one customer, and names them as `me` in a path, such as `/v1/customers/me/entitlements`. A request about any other customer is refused with `PERMISSION_DENIED`, so an app can't read or spend another customer's entitlements, whatever it sends. A secret key has no customer of its own, so it names customers by their ID, and `me` from a secret key is refused with `CUSTOMER_REF_INVALID`.

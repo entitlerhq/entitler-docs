@@ -1,0 +1,76 @@
+---
+title: TypeScript SDK
+description: Use Entitler from your TypeScript and JavaScript servers and web apps.
+---
+
+The TypeScript SDK, `@entitlerhq/entitler`, has two clients: `EntitlerServer` for your servers, with a secret key, and `EntitlerClient` for browsers, with a [customer token](/keys-and-tokens#customer-tokens). Its source is at [github.com/entitlerhq/entitler-typescript](https://github.com/entitlerhq/entitler-typescript).
+
+## Install
+
+```bash
+npm install @entitlerhq/entitler
+```
+
+## On your server
+
+```typescript
+import { EntitlerServer } from '@entitlerhq/entitler'
+
+const entitler = new EntitlerServer({ key: process.env.ENTITLER_KEY ?? '' })
+const ada = entitler.customer('ada')
+
+if (await ada.isEntitled('priority_support', { default: false })) {
+  openTicket()
+}
+
+const check = await ada.check('ai_credits')
+const entitlements = await ada.entitlements()
+
+await ada.recordUsage('ai_credits', 3, { idempotencyKey: 'run-42' })
+
+const { token } = await ada.token({ scopes: ['entitlements:read', 'usage:write'] })
+```
+
+- `check(feature)` answers the customer's entitlement to one feature: `entitled`, `value`, `meter` and `upgrades`. A meter's `remaining` is a number, or `'unlimited'`.
+- `isEntitled(feature, { default })` answers `entitled`, or `default` when Entitler can't be reached.
+- `entitlements()` answers every entitlement, with `has(feature)` and `get(feature)`.
+- `recordUsage(feature, amount, { idempotencyKey })` reports usage; see [Usage and meters](/concepts/usage-and-meters).
+- `withHold(feature, amount, work, { idempotencyKey })` holds, runs your work and settles what it used; see [Meter usage with holds](/guides/meter-usage-with-holds).
+- `token({ scopes })` mints a customer token for your app.
+
+## In the browser
+
+```typescript
+import { EntitlerClient } from '@entitlerhq/entitler'
+
+const entitler = new EntitlerClient({
+  token: async ({ signal }) => {
+    const response = await fetch('/api/entitler-token', { method: 'POST', signal, credentials: 'include' })
+    return (await response.json()).token
+  },
+})
+
+const check = await entitler.me.check('priority_support')
+```
+
+`me` is the customer the token was minted for. The client calls `token` for a new token when it has none or the one it has is about to expire.
+
+## Errors
+
+Every error the SDK throws extends `EntitlerError`, with `status`, `code`, `reason`, `parameters`, `requestId` and `retryAfter`; see [Errors](/reference/errors).
+
+```typescript
+import { EntitlerError } from '@entitlerhq/entitler'
+
+try {
+  await ada.recordUsage('ai_credits', 3, { idempotencyKey: 'run-42' })
+} catch (error) {
+  if (error instanceof EntitlerError && error.reason === 'CUSTOMER_NOT_FOUND') {
+    await registerAda()
+  } else {
+    throw error
+  }
+}
+```
+
+The SDK retries what is safe to retry on its own; see [Limits and retries](/reference/limits-and-retries).

@@ -1,0 +1,36 @@
+---
+title: Plans and subscriptions
+description: Plans give features to customers, and a customer's subscription says which plan they hold and until when.
+---
+
+A plan is a set of feature values with a price, such as Free, Pro and Scale. You build plans in the dashboard, inside a product, and release them when they are ready. Customers then hold plans, and their entitlements follow.
+
+## What a customer holds
+
+- **A plan**, through a subscription to one plan of each product. A subscription has a billing period, such as monthly or yearly, a start, and a renewal or end date.
+- **Add-ons**, plans you sell on top of a subscription, such as extra AI credits. An add-on can have a quantity.
+- **Grants**, feature values you give one customer by hand, for a while or for good. See [Give a customer a grant](/guides/give-a-grant).
+- **The default plan**, when the customer holds no plan of a product and you have set one. It is how a free tier works: every registered customer holds it with no subscription.
+
+The answer to every plan change lists the customer's holdings after it: their subscriptions, add-ons and grants.
+
+## Changing plans
+
+There are two ways to move a customer to another plan.
+
+| Who moves | Route | Use |
+| --------- | ----- | --- |
+| You, from your server | `PUT /v1/customers/{externalId}/plan` | Sales-led deals, migrations, support, and any change you charge for outside Entitler |
+| The customer, from your app | `POST /v1/customers/{externalId}/subscription` | Self-serve upgrades and downgrades, with checkout when a payment is due |
+
+Both name the plan by its key and can take a billing period. Your project's move policies decide whether an upgrade, downgrade or change of period happens now or at the end of the period, and whether it is prorated; a move can also ask for `SUBSCRIPTION_MOVE_WHEN_NOW` or `SUBSCRIPTION_MOVE_WHEN_PERIOD_END`. A change booked for the period end shows as pending until it happens, and can be cancelled before then.
+
+See [Change a customer's plan](/guides/change-a-plan) for both routes, with examples.
+
+## Payment
+
+When you connect a payment provider, such as Stripe, Entitler keeps the customer's subscription there in step with their plan. A self-serve move that needs a payment answers with a payment step instead of a finished move: its `url` is the checkout page to send the customer to, and the move completes once they pay. A move that needs no payment answers `done`, with the customer's holdings.
+
+## Releases
+
+Customers hold a version of each plan, the one that was released when they joined it. Publishing a new release changes the plans new customers join; existing customers keep their version until you move them, so a price rise never reaches a customer by surprise.

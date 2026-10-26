@@ -1,0 +1,58 @@
+---
+title: Swift SDK
+description: Use Entitler from your Swift apps and servers.
+---
+
+The Swift SDK has two clients: `EntitlerServer` for server-side Swift, with a secret key, and `EntitlerClient` for apps, with a [customer token](/keys-and-tokens#customer-tokens) or an identity token. Its source is at [github.com/entitlerhq/entitler-swift](https://github.com/entitlerhq/entitler-swift).
+
+## Install
+
+In Xcode, choose File, Add Package Dependencies, and enter `https://github.com/entitlerhq/entitler-swift`. In a `Package.swift`, add the same address as a dependency.
+
+## In your app
+
+```swift
+import Entitler
+
+let entitler = try EntitlerClient(tokenProvider: { try await api.entitlerToken() })
+
+let canUsePrioritySupport = await entitler.me.isEntitled(to: "priority_support", default: false)
+let check = try await entitler.me.check("priority_support")
+let entitlements = try await entitler.me.entitlements()
+
+try await entitler.me.recordUsage(of: "ai_credits", amount: 1, idempotencyKey: "message-\(messageID)")
+```
+
+`tokenProvider` asks your server for a customer token; the client calls it when it has no token or the one it has is about to expire. `me` is the customer the token was minted for.
+
+Holds need a token with `usage:write`:
+
+```swift
+let summary = try await entitler.me.withHold(of: "ai_credits", amount: 500, idempotencyKey: "summary-\(jobID)") { hold in
+  let answer = try await summarise(document)
+  try hold.use(answer.tokens)
+  return answer.summary
+}
+```
+
+## With an identity token
+
+When your app signs users in with an identity provider registered on your project, use a publishable key and the user's identity token, and register the customer on sign-in:
+
+```swift
+let entitler = EntitlerClient(key: publishableKey, identityTokenProvider: { try await signIn.currentIDToken() })
+try await entitler.register()
+```
+
+## On your server
+
+```swift
+let entitler = EntitlerServer(key: key)
+let ada = entitler.customer("ada")
+
+let check = try await ada.check("priority_support")
+```
+
+## Feature keys
+
+Plain strings work everywhere a feature is named. The SDK's generator plugin can also write constants for your features, such as `Features.aiCredits`, so a typo fails to compile.

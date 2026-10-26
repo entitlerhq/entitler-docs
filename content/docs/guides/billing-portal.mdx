@@ -1,0 +1,31 @@
+---
+title: Billing and the customer portal
+description: Send customers to their payment provider's billing portal to manage their payment details and invoices.
+---
+
+When you connect a payment provider, such as Stripe, to your project, Entitler keeps each customer's subscription there in step with their plan. Customers manage their payment method and invoices in the provider's billing portal, and your app sends them there.
+
+## Open the billing portal
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/billing/portal-sessions" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"returnUrl": "https://app.example.com/settings/billing"}'
+```
+
+```json
+{ "url": "https://billing.example.com/session/…" }
+```
+
+Redirect the customer to `url`. It is valid for a short time, so create it when they click, not ahead of time. They come back to your `returnUrl` when they are done.
+
+From your app, a [customer token](/keys-and-tokens#customer-tokens) with `billing:self` can open the portal for its own customer, naming them as `me`.
+
+## Read a customer's billing
+
+`GET /v1/customers/{externalId}/billing` answers the customer's billing as Entitler knows it from the provider: their payment state and what they will pay next.
+
+## Keep Entitler in step
+
+Entitler listens to your provider's events, so a payment, a failed payment or a change made in the portal reaches the customer's plan on its own. After the customer returns from the portal, call `POST /v1/customers/{externalId}/billing:sync` to bring their billing up to date at once rather than waiting for the provider's events. From a customer token, sync and the portal can each be called once every 10 seconds per customer.

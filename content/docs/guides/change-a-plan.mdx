@@ -1,0 +1,55 @@
+---
+title: Change a customer's plan
+description: Move a customer to another plan from your server, or let them choose one themselves with checkout.
+---
+
+There are two ways to change a customer's plan: you move them from your server, or they choose a plan in your app. Both name the plan by its key, and both answer the customer's holdings after the move.
+
+## Move a customer from your server
+
+Use `PUT /v1/customers/{externalId}/plan` for moves you decide: a deal your sales team closed, a migration, a support case. Your key needs `customers:write`.
+
+```bash
+curl -X PUT "$ENTITLER_API/v1/customers/ada/plan" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"set": {"planKey": "pro"}, "reason": "Annual deal", "register": true}'
+```
+
+| Field | Meaning |
+| ----- | ------- |
+| `set` | The plan, by `planKey`. |
+| `periodId` | The billing period, such as monthly or yearly, by its ID from your project settings. |
+| `when` | `SUBSCRIPTION_MOVE_WHEN_NOW` or `SUBSCRIPTION_MOVE_WHEN_PERIOD_END`. Your project's move policy decides when you leave it out. |
+| `reason` | Why, for the customer's history in the dashboard. |
+| `register` | `true` registers the customer first when they don't exist yet. |
+| `expectedRevision` | The customer's revision you last read, so the move is refused with `REVISION_CONFLICT` if someone changed them since. |
+
+A move booked for the end of the period shows in the answer as pending. Cancel it with `POST /v1/customers/{externalId}/subscription:cancelPendingChange`.
+
+## Let the customer choose
+
+Use `POST /v1/customers/{externalId}/subscription` for moves the customer makes in your app. It runs your move policies and, when you have connected a payment provider, takes payment.
+
+```bash
+curl -X POST "$ENTITLER_API/v1/customers/ada/subscription" \
+  -H "Authorization: Bearer $ENTITLER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"plan": {"planKey": "pro"}, "returnUrl": "https://app.example.com/billing"}'
+```
+
+The answer is one of three outcomes:
+
+- `done`: the move is made, and its holdings are the customer's new plans.
+- `pay`: a payment is due first. Send the customer to `pay.url`, the checkout page; they come back to your `returnUrl`, and the move completes once they pay.
+- `confirming`: the payment provider is confirming a payment. The move completes on its own when it does.
+
+Your app can make this call itself with a [customer token](/keys-and-tokens#customer-tokens) that holds `billing:self`, naming the customer as `me`.
+
+## Show the plans a customer can choose
+
+`GET /v1/customers/{externalId}/plans` lists the plans the customer can move to: whether each is an upgrade or a downgrade, the features it changes, its billing periods and when the move would happen. Use it to show the right buttons on your pricing page.
+
+## Cancel
+
+`POST /v1/customers/{externalId}/subscription:cancel` cancels the customer's subscription, at the time your move policy sets. They keep their plan until then, then fall back to your default plan.

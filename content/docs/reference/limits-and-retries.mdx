@@ -1,0 +1,35 @@
+---
+title: Limits and retries
+description: Rate limits, idempotency and which requests are safe to retry, and how the SDKs retry them for you.
+---
+
+## Rate limits
+
+Requests are counted per environment and per credential over 10-second windows. How many fit depends on your Entitler plan. Past a limit, a request is refused with `429`, the reason `API_RATE_LIMITED` or `API_ALLOWANCE_REACHED`, and a `Retry-After` header with the seconds to wait. Wait that long before you send it again.
+
+Reports of usage from customer tokens have a limit of their own per customer, refused with `USAGE_RATE_LIMITED`, so one customer's app can't spend your environment's allowance.
+
+## Which requests are safe to retry
+
+A request is safe to send again when doing it twice has the same effect as doing it once:
+
+- `GET`, `PUT` and `DELETE` requests;
+- `POST` requests that carry an idempotency key, such as usage reports and holds.
+
+Retry those after a timeout, a lost connection, or a `408`, `429`, `500`, `502`, `503` or `504`. Don't retry any other `POST` unless you know it didn't take effect.
+
+## Idempotency keys
+
+Usage reports, holds and other writes that create something take an `idempotencyKey` in the body. Use an ID from your own system for the work, such as a job or message ID, never a random value made at the moment you send: a retry must send the same key. A repeat with the same key and the same request answers the first result; the same key with a different request is refused.
+
+## How the SDKs retry
+
+The SDKs retry safe requests up to twice, waiting a random time of up to 0.5 seconds, then up to 1 second, and never more than 8 seconds. When Entitler sends `Retry-After`, they wait that long instead, and when it is longer than 10 seconds they stop and throw the error, with `retryAfter` set, so your code decides.
+
+## Pagination
+
+Lists answer a page at a time. Pass the answer's next page token back as `page_token` or `after`, as the route names it, to read the next page; an answer without one is the last page. A page size above a route's maximum answers a page of the maximum.
+
+## Times
+
+Times are Unix timestamps: in seconds, such as `asOf` and `resetsAt`, or in milliseconds when the field name ends in `Ms`, such as `occurredAtMs`.

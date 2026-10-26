@@ -1,4 +1,13 @@
 {
   "title": "Entitler docs",
-  "pages": ["index", "[API reference](/api-reference)"]
+  "pages": [
+    "index",
+    "quick-start",
+    "keys-and-tokens",
+    "concepts",
+    "guides",
+    "sdks",
+    "reference",
+    "[API reference](/api-reference)"
+  ]
 }

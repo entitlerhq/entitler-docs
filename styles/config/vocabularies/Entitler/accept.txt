@@ -38,3 +38,5 @@ Vale
 [Ss]ales-led
 [Ss]elf-serve
 [Ww]ebhooks?
+Xcode
+[Ii]dempotency
