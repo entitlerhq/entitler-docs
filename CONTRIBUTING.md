@@ -1,6 +1,6 @@
 # Contributing to the Entitler docs
 
-This repository holds the pages of [docs.entitler.dev](https://docs.entitler.dev): MDX files, their
+This repository holds the pages of [docs.entitler.co](https://docs.entitler.co): MDX files, their
 navigation files and the checks that run on every pull request. The site that renders them, the API
 reference and the search are built elsewhere from this content.
 
@@ -74,14 +74,14 @@ never `{expressions}`: the site refuses to build a page that breaks these rules.
   <Tab value="curl">
 
 ```bash
-curl https://api.entitler.dev/keys/self -H "Authorization: Bearer $ENTITLER_KEY"
+curl https://api.entitler.app/v1/caller -H "Authorization: Bearer $ENTITLER_KEY"
 ```
 
   </Tab>
   <Tab value="JavaScript">
 
 ```javascript
-await fetch('https://api.entitler.dev/keys/self', { headers: { Authorization: `Bearer ${key}` } })
+await fetch('https://api.entitler.app/v1/caller', { headers: { Authorization: `Bearer ${key}` } })
 ```
 
   </Tab>
@@ -113,9 +113,9 @@ shell commands.
   receives". Questions ("What happens when…?") are fine.
 - No vague "what" clauses, such as "what they can use" or "what each plan includes": name the
   thing, such as "their features and limits".
-- Every fact must match the live API, described by the OpenAPI documents at
-  `https://api.entitler.dev/customers/openapi.json` and `https://api.entitler.dev/keys/openapi.json`.
-  Show requests with curl against `https://api.entitler.dev`, with keys from `$ENTITLER_KEY`.
+- Every fact must match the live API, described by the OpenAPI document at
+  `https://api.entitler.app/v1/openapi.json`. Show requests with curl against
+  `https://api.entitler.app`, with keys from `$ENTITLER_KEY`.
 - Describe the product and the API only: no internal names, plans or dates for future features.
 
 ## Checks
@@ -135,5 +135,5 @@ Words the dictionary lacks, such as product names, go in
 `styles/config/vocabularies/Entitler/accept.txt`, one per line (regular expressions allowed).
 
 Every pull request runs these checks, and one required check, **All checks passed**, succeeds only
-when every one of them does. Pull requests are merged with the rebase method. A merge to `main`
-rebuilds docs.entitler.dev within a few minutes.
+when every one of them does. Pull requests join a merge queue, which rebase-merges them. Each
+commit on `main` is published to docs.entitler.co within a few minutes.
