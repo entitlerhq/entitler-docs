@@ -53,6 +53,18 @@ let ada = try entitler.customer("ada")
 let check = try await ada.check("priority_support")
 ```
 
+## Errors
+
+The SDK throws `EntitlerError`. A refusal from the API is `.api(APIError)`, with `status`, `code`, `reason`, `parameters`, `requestID` and `retryAfter` in seconds; `.connection` and `.timeout` mean Entitler couldn't be reached. See [Errors](/reference/errors).
+
+```swift
+do {
+  try await ada.recordUsage(of: "ai_credits", amount: 3, idempotencyKey: "run-42")
+} catch EntitlerError.api(let error) where error.reason == .customerNotFound {
+  try await registerAda()
+}
+```
+
 ## Feature keys
 
 Plain strings work everywhere a feature is named. The SDK's generator plugin can also write constants for your features, such as `Features.aiCredits`, so a typo fails to compile.
