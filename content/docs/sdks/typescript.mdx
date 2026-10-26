@@ -34,7 +34,7 @@ const { token } = await ada.token({ scopes: ['entitlements:read', 'usage:write']
 - `check(feature)` answers the customer's entitlement to one feature: `entitled`, `value`, `meter` and `upgrades`. A meter's `remaining` is a number, or `'unlimited'`.
 - `isEntitled(feature, { default })` answers `entitled`, or `default` when Entitler can't be reached.
 - `entitlements()` answers every entitlement, with `has(feature)` and `get(feature)`.
-- `recordUsage(feature, amount, { idempotencyKey })` reports usage; see [Usage and meters](/concepts/usage-and-meters).
+- `recordUsage(feature, amount, { idempotencyKey })` reports usage. It answers the same fields as `check`, with the meter after the report, plus `outcome`, `refusal`, `amount`, `meterChange` and `overBy`; see [Usage and meters](/concepts/usage-and-meters).
 - `withHold(feature, amount, work, { idempotencyKey })` holds, runs your work and settles what it used; see [Meter usage with holds](/guides/meter-usage-with-holds).
 - `token({ scopes })` mints a customer token for your app.
 
