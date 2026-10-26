@@ -10,7 +10,16 @@ import { visit } from 'unist-util-visit'
 import { visitParents } from 'unist-util-visit-parents'
 
 import { COMPONENT_PROPS, COMPONENTS, type Component, standIns } from './components'
-import { CONTENT_DIR, contentFiles, display, NAV_LINK, NAV_SEPARATOR, readPage } from './pages'
+import {
+  CONTENT_DIR,
+  contentFiles,
+  display,
+  ENTRY_NAME,
+  HEADING_ID,
+  NAV_LINK,
+  NAV_SEPARATOR,
+  readPage,
+} from './pages'
 
 const problems: string[] = []
 const allowed = new Set<string>(COMPONENTS)
@@ -50,8 +59,6 @@ function effectiveParent(ancestors: readonly Ancestor[]) {
     )
   return unwrapped ? ancestors.at(-2) : parent
 }
-
-const HEADING_ID = /\s\[#[a-z0-9-]+]\s*$/
 
 function headingIdProblem(heading: Heading) {
   const texts: string[] = []
@@ -107,7 +114,7 @@ function onlyKnownComponents(file: string) {
       }
     })
     visit(tree, ['mdxjsEsm', 'mdxFlowExpression', 'mdxTextExpression'], (node) => {
-      report(file, `line ${node.position?.start.line}: pages hold no imports, exports or {expressions}.`)
+      throw new Error(`line ${node.position?.start.line}: pages hold no imports, exports or {expressions}.`)
     })
   }
 }
@@ -118,14 +125,20 @@ const PROPER_NOUNS = new Set(
     .flatMap((line) => (line.startsWith('  - ') ? [line.slice(4).trim()] : [])),
 )
 
-function sentenceCaseProblem(title: string) {
-  const words = title.split(/\s+/).slice(1)
+function sentenceCaseProblem(key: string, value: string) {
+  const words = value.split(/\s+/).slice(1)
   const capitalised = words.filter(
     (word) => /^[A-Z]/.test(word) && !PROPER_NOUNS.has(word.replace(/[^A-Za-z]/g, '')),
   )
   return capitalised.length > 0
-    ? `title "${title}" is not in sentence case (${capitalised.join(', ')}).`
+    ? `${key} "${value}" is not in sentence case (${capitalised.join(', ')}).`
     : undefined
+}
+
+function sentenceProblem(description: string) {
+  return /^[^.!?]+\.$/.test(description.trim())
+    ? undefined
+    : `description "${description}" must be one sentence ending in a full stop.`
 }
 
 function checkFrontmatter(file: string, frontmatter: unknown) {
@@ -142,7 +155,7 @@ function checkFrontmatter(file: string, frontmatter: unknown) {
   if (typeof fields.title !== 'string' || fields.title.trim() === '') {
     report(file, 'frontmatter needs a title.')
   } else {
-    const problem = sentenceCaseProblem(fields.title)
+    const problem = sentenceCaseProblem('title', fields.title)
     if (problem) report(file, problem)
   }
   for (const key of ['title', 'description']) {
@@ -155,6 +168,13 @@ function checkFrontmatter(file: string, frontmatter: unknown) {
   }
   if (typeof fields.description !== 'string' || fields.description.trim() === '') {
     report(file, 'frontmatter needs a description, one sentence for search results and link previews.')
+  } else {
+    for (const problem of [
+      sentenceCaseProblem('description', fields.description),
+      sentenceProblem(fields.description),
+    ]) {
+      if (problem) report(file, problem)
+    }
   }
 }
 
@@ -203,6 +223,10 @@ function checkMeta(file: string) {
       continue
     }
     if (NAV_LINK.test(entry) || NAV_SEPARATOR.test(entry)) continue
+    if (!ENTRY_NAME.test(entry)) {
+      report(file, `lists "${entry}"; list a page or folder of this folder by its name alone.`)
+      continue
+    }
     const path = join(dir, entry)
     if (existsSync(`${path}.mdx`)) listed.push(`${path}.mdx`)
     else if (existsSync(path) && statSync(path).isDirectory()) listed.push(path)
