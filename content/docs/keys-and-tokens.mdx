@@ -13,7 +13,7 @@ Every request carries one credential in the `Authorization` header, as `Bearer` 
 
 ## Secret keys
 
-Create keys in the dashboard. Each key belongs to one environment of a project, such as test or live, and holds the permissions you choose when you create it. Give each server its own key with only the permissions it needs, so you can revoke one without touching the others.
+Create keys in the dashboard. Each key acts in one environment of a project, such as test or live, and holds the permissions you choose when you create it. Give each server its own key with only the permissions it needs, so you can revoke one without touching the others.
 
 ```bash
 curl "$ENTITLER_API/v1/customers/ada/entitlements" \
