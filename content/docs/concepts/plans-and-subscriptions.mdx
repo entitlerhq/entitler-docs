@@ -20,8 +20,8 @@ There are two ways to move a customer to another plan.
 
 | Who moves | Route | Use |
 | --------- | ----- | --- |
-| You, from your server | `PUT /v1/customers/{externalId}/plan` | Sales-led deals, migrations, support, and any change you charge for outside Entitler |
-| The customer, from your app | `POST /v1/customers/{externalId}/subscription` | Self-serve upgrades and downgrades, with checkout when a payment is due |
+| You, from your server | `PUT /v1/customers/{external_id}/plan` | Sales-led deals, migrations, support, and any change you charge for outside Entitler |
+| The customer, from your app | `POST /v1/customers/{external_id}/subscription` | Self-serve upgrades and downgrades, with checkout when a payment is due |
 
 Both name the plan by its key and can take a billing period. Your project's move policies decide whether an upgrade, downgrade or change of period happens now or at the end of the period, and whether it is prorated; a move can also ask for `SUBSCRIPTION_MOVE_WHEN_NOW` or `SUBSCRIPTION_MOVE_WHEN_PERIOD_END`. A change booked for the period end shows as pending until it happens, and can be cancelled before then.
 

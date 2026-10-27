@@ -45,7 +45,7 @@ curl "$ENTITLER_API/v1/customers/ada/entitlements/ai_credits" \
 - `sources` says where the value comes from: the default plan, a plan, an add-on, a grant or a group.
 - `upgrades` lists the plans and add-ons that would give the customer more of the feature, and whether they can buy one themselves (`UPGRADE_ACTION_BUY`) or should contact you (`UPGRADE_ACTION_CONTACT`). Use it to show the right upgrade prompt.
 
-`GET /v1/customers/{externalId}/entitlements` answers every entitlement of the customer at once, which suits a page that gates several features.
+`GET /v1/customers/{external_id}/entitlements` answers every entitlement of the customer at once, which suits a page that gates several features.
 
 ## When answers change
 

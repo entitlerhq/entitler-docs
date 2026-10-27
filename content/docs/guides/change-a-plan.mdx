@@ -7,7 +7,7 @@ There are two ways to change a customer's plan: you move them from your server, 
 
 ## Move a customer from your server
 
-Use `PUT /v1/customers/{externalId}/plan` for moves you decide: a deal your sales team closed, a migration, a support case. Your key needs `customers:write`.
+Use `PUT /v1/customers/{external_id}/plan` for moves you decide: a deal your sales team closed, a migration, a support case. Your key needs `customers:write`.
 
 ```bash
 curl -X PUT "$ENTITLER_API/v1/customers/ada/plan" \
@@ -25,11 +25,11 @@ curl -X PUT "$ENTITLER_API/v1/customers/ada/plan" \
 | `register` | `true` registers the customer first when they don't exist yet. |
 | `expectedRevision` | The customer's revision you last read, so the move is refused with `REVISION_CONFLICT` if someone changed them since. |
 
-A move booked for the end of the period shows in the answer as pending. Cancel it with `POST /v1/customers/{externalId}/subscription:cancelPendingChange`.
+A move booked for the end of the period shows in the answer as pending. Cancel it with `POST /v1/customers/{external_id}/subscription:cancelPendingChange`.
 
 ## Let the customer choose
 
-Use `POST /v1/customers/{externalId}/subscription` for moves the customer makes in your app. It runs your move policies and, when you have connected a payment provider, takes payment.
+Use `POST /v1/customers/{external_id}/subscription` for moves the customer makes in your app. It runs your move policies and, when you have connected a payment provider, takes payment.
 
 ```bash
 curl -X POST "$ENTITLER_API/v1/customers/ada/subscription" \
@@ -48,8 +48,8 @@ Your app can make this call itself with a [customer token](/keys-and-tokens#cust
 
 ## Show the plans a customer can choose
 
-`GET /v1/customers/{externalId}/plans` lists the plans the customer can move to: whether each is an upgrade or a downgrade, the features it changes, its billing periods and when the move would happen. Use it to show the right buttons on your pricing page.
+`GET /v1/customers/{external_id}/plans` lists the plans the customer can move to: whether each is an upgrade or a downgrade, the features it changes, its billing periods and when the move would happen. Use it to show the right buttons on your pricing page.
 
 ## Cancel
 
-`POST /v1/customers/{externalId}/subscription:cancel` cancels the customer's subscription, at the time your move policy sets. They keep their plan until then, then fall back to your default plan.
+`POST /v1/customers/{external_id}/subscription:cancel` cancels the customer's subscription, at the time your move policy sets. They keep their plan until then, then fall back to your default plan.

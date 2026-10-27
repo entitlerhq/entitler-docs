@@ -17,7 +17,7 @@ A customer lives in one environment of one project. The same external ID in your
 
 ## Registering customers
 
-Register a customer when they sign up or sign in, with `PUT /v1/customers/{externalId}`. A customer that exists already is answered as it is, so you can register on every sign-in without checking first. Registering with a name or email updates them when your key holds `customers:write`.
+Register a customer when they sign up or sign in, with `PUT /v1/customers/{external_id}`. A customer that exists already is answered as it is, so you can register on every sign-in without checking first. Registering with a name or email updates them when your key holds `customers:write`.
 
 ```bash
 curl -X PUT "$ENTITLER_API/v1/customers/ada" \
@@ -30,5 +30,5 @@ A new customer starts on your default plan, when you have one. Reporting usage a
 
 ## Removing customers
 
-- `DELETE /v1/customers/{externalId}` deletes the customer. Registering the same external ID again creates a new customer, with none of the old one's plans or usage.
-- `POST /v1/customers/{externalId}:erase` erases the customer's personal details, their external ID, name, email and attributes, from every customer that ever held the external ID in the environment, deleted ones included. Use it when someone asks you to remove their data.
+- `DELETE /v1/customers/{external_id}` deletes the customer. Registering the same external ID again creates a new customer, with none of the old one's plans or usage.
+- `POST /v1/customers/{external_id}:erase` erases the customer's personal details, their external ID, name, email and attributes, from every customer that ever held the external ID in the environment, deleted ones included. Use it when someone asks you to remove their data.

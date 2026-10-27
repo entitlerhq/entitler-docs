@@ -79,6 +79,6 @@ curl -X POST "$ENTITLER_API/v1/usage/events" \
 
 ## Reading usage
 
-`GET /v1/customers/{externalId}/usage` lists the customer's recent reports, newest first, with each metered feature's meter. Your key needs `usage:read`.
+`GET /v1/customers/{external_id}/usage` lists the customer's recent reports, newest first, with each metered feature's meter. Your key needs `usage:read`.
 
-To correct a report, cancel it with `POST /v1/customers/{externalId}/usage/{usageId}:cancel`, which takes it off the meter, or set the meter with `POST /v1/customers/{externalId}/meters/{featureKey}:adjust`. Both need `customers:write`.
+To correct a report, cancel it with `POST /v1/customers/{external_id}/usage/{usage_id}:cancel`, which takes it off the meter, or set the meter with `POST /v1/customers/{external_id}/meters/{feature_key}:adjust`. Both need `customers:write`.

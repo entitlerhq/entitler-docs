@@ -24,8 +24,8 @@ From your app, a [customer token](/keys-and-tokens#customer-tokens) with `billin
 
 ## Read a customer's billing
 
-`GET /v1/customers/{externalId}/billing` answers the customer's billing as Entitler knows it from the provider: their payment state and what they will pay next.
+`GET /v1/customers/{external_id}/billing` answers the customer's billing as Entitler knows it from the provider: their payment state and what they will pay next.
 
 ## Keep Entitler in step
 
-Entitler listens to your provider's events, so a payment, a failed payment or a change made in the portal reaches the customer's plan on its own. After the customer returns from the portal, call `POST /v1/customers/{externalId}/billing:sync` to bring their billing up to date at once rather than waiting for the provider's events. From a customer token, sync and the portal can each be called once every 10 seconds per customer.
+Entitler listens to your provider's events, so a payment, a failed payment or a change made in the portal reaches the customer's plan on its own. After the customer returns from the portal, call `POST /v1/customers/{external_id}/billing:sync` to bring their billing up to date at once rather than waiting for the provider's events. From a customer token, sync and the portal can each be called once every 10 seconds per customer.
